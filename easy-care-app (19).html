@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Easy Care</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f3f4f6;color:#1a1a1a;min-height:100vh}
+.page{display:none}
+input,select,textarea,button{font-family:inherit}
+.topbar{background:#fff;border-bottom:1px solid #e5e7eb;height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:50}
+.tl{display:flex;align-items:center;gap:10px}
+.logo{width:30px;height:30px;background:#1D9E75;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.topbar h1{font-size:16px;font-weight:700}
+.nav{background:#fff;border-bottom:1px solid #e5e7eb;display:flex;padding:0 16px}
+.nb{padding:12px 18px;font-size:14px;cursor:pointer;border-bottom:2px solid transparent;color:#6b7280;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none}
+.nb.on{color:#0F6E56;border-bottom-color:#1D9E75;font-weight:600}
+.main{flex:1;padding:24px 16px;max-width:900px;margin:0 auto;width:100%}
+.f{display:flex;flex-direction:column;gap:4px;margin-bottom:13px}
+.f label{font-size:13px;font-weight:500}
+.req{color:#E24B4A}
+.f input,.f select,.f textarea{padding:9px 11px;border:1px solid #d1d5db;border-radius:10px;font-size:14px;color:#1a1a1a;background:#fff;width:100%}
+.f input:focus,.f select:focus,.f textarea:focus{outline:none;border-color:#1D9E75;box-shadow:0 0 0 3px rgba(29,158,117,.12)}
+.f input::placeholder,.f textarea::placeholder{color:#9ca3af}
+.f select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:30px}
+.f textarea{resize:vertical;min-height:68px;line-height:1.6}
+.hint{font-size:12px;color:#6b7280}
+.errmsg{font-size:12px;color:#E24B4A;display:none}
+.f.err input,.f.err select,.f.err textarea{border-color:#E24B4A}
+.f.err .errmsg{display:block}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.s2{grid-column:span 2}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:20px;margin-bottom:14px}
+.sh{display:flex;align-items:flex-start;gap:12px;margin-bottom:18px}
+.si{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px}
+.ig{background:#E1F5EE}.ib{background:#EFF6FF}.ir{background:#FCEBEB}.ia{background:#FAEEDA}.ip{background:#F3F0FF}
+.sh h3{font-size:15px;font-weight:600;margin-bottom:2px}
+.sh p{font-size:13px;color:#6b7280;line-height:1.5}
+.btn{padding:10px 20px;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px}
+.btn:active{transform:scale(.98)}
+.btn-g{background:#1D9E75;color:#fff}.btn-g:hover{background:#0F6E56}
+.btn-w{background:#fff;color:#6b7280;border:1px solid #d1d5db}.btn-w:hover{background:#f9fafb}
+.btn-r{background:#FCEBEB;color:#A32D2D;border:1px solid #F09595}
+.btn-sm{padding:6px 13px;font-size:13px}
+.ibtn{padding:6px 9px;border-radius:10px;font-size:14px;cursor:pointer;border:1px solid #d1d5db;background:#fff;color:#6b7280}
+.ibtn:hover{background:#f9fafb}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;padding:10px 14px;font-size:12px;font-weight:500;color:#6b7280;border-bottom:1px solid #e5e7eb;white-space:nowrap}
+td{padding:12px 14px;border-bottom:1px solid #e5e7eb;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafa}
+.bpill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;background:#FCEBEB;color:#A32D2D}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:12px;font-weight:500}
+.t-r{background:#FCEBEB;color:#A32D2D}.t-b{background:#EFF6FF;color:#1e40af}.t-a{background:#FAEEDA;color:#854F0B}.t-g{background:#E1F5EE;color:#0F6E56}
+.met{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px 16px}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto}
+.modal-h{padding:18px 20px 0;display:flex;justify-content:space-between;align-items:center}
+.modal-h h2{font-size:17px;font-weight:600}
+.modal-x{background:none;border:none;font-size:22px;cursor:pointer;color:#6b7280;padding:2px 8px;border-radius:10px}
+.modal-b{padding:18px 20px}
+.modal-f{padding:0 20px 18px;display:flex;gap:8px;justify-content:flex-end}
+.lgpd{background:#E1F5EE;border:1px solid #9FE1CB;border-radius:10px;padding:14px;margin-bottom:14px;font-size:13px;color:#085041;line-height:1.7}
+.chk{display:flex;align-items:flex-start;gap:9px;margin-bottom:10px}
+.chk input[type=checkbox]{width:16px;height:16px;margin-top:3px;flex-shrink:0;accent-color:#1D9E75;cursor:pointer}
+.chk label{font-size:13px;line-height:1.6;cursor:pointer}
+.photo-up{border:1.5px dashed #d1d5db;border-radius:10px;padding:18px;text-align:center;cursor:pointer;position:relative;margin-bottom:14px}
+.photo-up:hover{border-color:#1D9E75;background:#E1F5EE}
+.photo-up input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.photo-up img{width:60px;height:60px;border-radius:50%;object-fit:cover;margin:0 auto 8px;display:none;border:2px solid #1D9E75}
+.qrc{text-align:center;padding:10px 0 16px}
+.qrc p{font-size:13px;color:#6b7280;margin-top:10px}
+.sbox{text-align:center;padding:32px 20px}
+.sico{width:56px;height:56px;border-radius:50%;background:#E1F5EE;margin:0 auto 16px;display:flex;align-items:center;justify-content:center}
+.sbox h2{font-size:20px;font-weight:700;margin-bottom:8px}
+.sbox p{font-size:14px;color:#6b7280;line-height:1.6;margin-bottom:20px}
+.ld{text-align:center;padding:40px;color:#6b7280;font-size:14px}
+.spin{display:inline-block;width:20px;height:20px;border:2px solid #e5e7eb;border-top-color:#1D9E75;border-radius:50%;animation:sp .7s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:11px 16px;border-radius:10px;font-size:14px;z-index:999;opacity:0;transform:translateY(6px);transition:all .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.tok{background:#0F6E56}.tko{background:#A32D2D}
+.eh{background:#E24B4A;color:#fff;padding:16px 18px;display:flex;align-items:center;gap:12px}
+.ei{width:40px;height:40px;background:rgba(255,255,255,.2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.eh h1{font-size:17px;font-weight:700}.eh p{font-size:12px;opacity:.85}
+.eb{max-width:520px;margin:0 auto;padding:16px}
+.ec{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin-bottom:10px}
+.etit{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin-bottom:12px}
+.erow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f3f4f6;font-size:14px}
+.erow:last-child{border-bottom:none}
+.elbl{color:#6b7280}.eval{font-weight:500;text-align:right;max-width:60%}
+.bbl{display:inline-block;background:#FCEBEB;color:#A32D2D;padding:3px 12px;border-radius:99px;font-size:14px;font-weight:700}
+.trow{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.acard{border:1.5px solid #F09595}.acard .etit{color:#A32D2D}
+.sbn{background:#E1F5EE;border:1px solid #9FE1CB;border-radius:14px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.sbn p{font-size:13px;color:#085041;flex:1;line-height:1.6;word-break:break-all}
+.ph{background:#1D9E75;color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px}
+.ph h1{font-size:17px;font-weight:700}.ph p{font-size:12px;opacity:.85}
+.pb{max-width:520px;margin:0 auto;padding:16px}
+.pc{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px;margin-bottom:12px}
+.pt{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin-bottom:12px}
+.pr{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f3f4f6;font-size:14px}
+.pr:last-child{border-bottom:none}
+.pl{color:#6b7280}.pv{font-weight:500;text-align:right;max-width:60%}
+.paycard{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:32px 28px;width:100%;max-width:420px;margin:20px}
+.planbox{border:1.5px solid #1D9E75;border-radius:10px;padding:16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.pixbox{background:#E1F5EE;border:1px solid #9FE1CB;border-radius:10px;padding:16px;margin-bottom:18px;text-align:center}
+.infobox{background:#E1F5EE;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#085041}
+@media(max-width:540px){.g2,.g3{grid-template-columns:1fr}.s2{grid-column:span 1}.main{padding:16px}}
+</style>
+</head>
+<body>
+
+<!-- ═══ TELA INICIAL (paciente ou admin) ════════════════════ -->
+<div id="pg-home" class="page" style="display:flex;min-height:100vh;align-items:center;justify-content:center">
+  <div style="width:100%;max-width:380px;padding:20px;margin:auto">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="width:60px;height:60px;background:#1D9E75;border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+        <svg width="30" height="30" viewBox="0 0 30 30" fill="none"><path d="M15 3v24M3 15h24" stroke="white" stroke-width="3" stroke-linecap="round"/></svg>
+      </div>
+      <h1 style="font-size:26px;font-weight:700">Easy Care</h1>
+      <p style="font-size:14px;color:#6b7280;margin-top:4px">Dados médicos acessíveis em emergências</p>
+    </div>
+    <div class="card" style="padding:24px">
+      <button class="btn btn-g" style="width:100%;justify-content:center;margin-bottom:10px;font-size:15px" onclick="showForm()">📋 Cadastrar minha ficha médica</button>
+      <button class="btn btn-w" style="width:100%;justify-content:center;font-size:15px" onclick="showPLogin()">🔑 Acessar minha ficha</button>
+      <div style="border-top:1px solid #e5e7eb;margin:16px 0"></div>
+      <button class="btn btn-w" style="width:100%;justify-content:center;font-size:13px;color:#9ca3af" onclick="showAdminLogin()">Acesso da equipe</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LOGIN ADMIN ════════════════════════════════════════ -->
+<div id="pg-login" class="page" style="min-height:100vh;align-items:center;justify-content:center">
+  <div style="width:100%;max-width:380px;padding:20px;margin:auto">
+    <div class="card" style="padding:32px 28px">
+      <div style="text-align:center;margin-bottom:24px">
+        <h2 style="font-size:20px;font-weight:700">Acesso da equipe</h2>
+        <p style="font-size:13px;color:#6b7280;margin-top:4px">Easy Care Admin</p>
+      </div>
+      <div id="l-err" style="display:none;background:#FCEBEB;color:#A32D2D;font-size:13px;padding:10px 13px;border-radius:10px;margin-bottom:12px"></div>
+      <div class="f"><label>E-mail</label><input type="email" id="l-email" placeholder="seu@email.com"></div>
+      <div class="f"><label>Senha</label><input type="password" id="l-pass" placeholder="••••••••"></div>
+      <button class="btn btn-g" style="width:100%;justify-content:center;margin-top:4px" onclick="doAdminLogin()">Entrar</button>
+      <button class="btn btn-w" style="width:100%;justify-content:center;margin-top:8px" onclick="showPage('pg-home')">← Voltar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADMIN PAINEL ════════════════════════════════════════ -->
+<div id="pg-admin" class="page" style="flex-direction:column">
+  <div class="topbar">
+    <div class="tl">
+      <div class="logo"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2v14M2 9h14" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+      <h1>Easy Care</h1>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="font-size:13px;color:#6b7280">Admin</span>
+      <button class="btn btn-w btn-sm" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="nb on" id="nb1" onclick="goTab(1)">Pacientes</button>
+    <button class="nb" id="nb2" onclick="goTab(2)">Novo cadastro</button>
+  </div>
+  <div class="main">
+    <div id="tab1">
+      <div class="sbn">
+        <div>
+          <strong style="font-size:14px;color:#085041">Link para pacientes se cadastrarem</strong>
+          <p id="flink" style="margin-top:2px"></p>
+        </div>
+        <button class="btn btn-w btn-sm" onclick="copyFL()">Copiar</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px" id="mets"></div>
+      <div style="display:flex;gap:10px;margin-bottom:14px">
+        <input type="text" id="sq" placeholder="Buscar por nome ou CPF..." style="flex:1;padding:9px 13px;border:1px solid #d1d5db;border-radius:10px;font-size:14px;background:#fff" oninput="doSearch()">
+        <button class="btn btn-g" onclick="goTab(2)">+ Novo</button>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="tbl-wrap">
+          <table><thead><tr><th>Paciente</th><th>CPF</th><th>Nasc.</th><th>Telefone</th><th>Sangue</th><th>Ações</th></tr></thead>
+          <tbody id="tbody"></tbody></table>
+        </div>
+        <div id="tld" class="ld"><span class="spin"></span>Carregando...</div>
+        <div id="tem" style="display:none;text-align:center;padding:60px 20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:6px">Nenhum paciente</h3><p style="font-size:14px;color:#6b7280">Compartilhe o link acima para receber cadastros.</p></div>
+      </div>
+    </div>
+    <div id="tab2" style="display:none">
+      <div id="admform"></div>
+      <div id="admok" class="card" style="display:none">
+        <div class="sbox">
+          <div class="sico"><svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M4 14l7 7L24 7" stroke="#1D9E75" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <h2>Cadastro realizado!</h2><p>Paciente salvo. QR Code pronto.</p>
+          <div class="qrc"><div id="qr-adm"></div></div>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <button class="btn btn-g" onclick="goTab(1)">Ver pacientes</button>
+            <button class="btn btn-w" onclick="initAdmForm()">Cadastrar outro</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FORMULÁRIO PÚBLICO ══════════════════════════════════ -->
+<div id="pg-form" class="page" style="padding-bottom:40px">
+  <div class="topbar">
+    <div class="tl">
+      <div class="logo"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2v14M2 9h14" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+      <h1>Easy Care</h1>
+    </div>
+    <button class="btn btn-w btn-sm" onclick="showPage('pg-home')">← Voltar</button>
+  </div>
+  <div style="max-width:700px;margin:0 auto;padding:24px 16px">
+    <h2 style="font-size:22px;font-weight:700;margin-bottom:6px">Cadastro de ficha médica</h2>
+    <p style="font-size:14px;color:#6b7280;line-height:1.6;margin-bottom:28px">Preencha seus dados para receber um QR Code de emergência.</p>
+    <div id="pubform"></div>
+    <div id="pubok" class="card" style="display:none">
+      <div class="sbox">
+        <div class="sico"><svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M4 14l7 7L24 7" stroke="#1D9E75" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h2>Ficha criada!</h2><p>Salve ou imprima seu QR Code.</p>
+        <div class="qrc"><div id="qr-pub"></div></div>
+        <button class="btn btn-w btn-sm" onclick="printQR('qr-pub')">Imprimir QR</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGAMENTO ═══════════════════════════════════════════ -->
+<div id="pg-pay" class="page" style="min-height:100vh;align-items:center;justify-content:center;background:#f3f4f6">
+  <div class="paycard">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="width:52px;height:52px;background:#1D9E75;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path d="M13 3v20M3 13h20" stroke="white" stroke-width="3" stroke-linecap="round"/></svg>
+      </div>
+      <h2 style="font-size:20px;font-weight:700;margin-bottom:6px">Ative sua ficha médica</h2>
+      <p style="font-size:14px;color:#6b7280;line-height:1.6">Realize o pagamento para receber seu QR Code.</p>
+    </div>
+    <div class="planbox">
+      <div><div style="font-size:15px;font-weight:600;color:#0F6E56">Easy Care Pessoal</div><div style="font-size:12px;color:#6b7280;margin-top:3px">Acesso vitalício · QR Code digital e físico</div></div>
+      <div style="font-size:22px;font-weight:700">R$ 29<span style="font-size:13px;color:#6b7280;font-weight:400">/único</span></div>
+    </div>
+    <div class="pixbox">
+      <div style="font-size:13px;color:#085041;font-weight:500;margin-bottom:4px">Pague via PIX</div>
+      <div style="font-size:16px;font-weight:700;color:#0F6E56;margin:6px 0">contato@easycare.com.br</div>
+      <button class="btn btn-w btn-sm" style="margin-top:8px" onclick="copyPix()">Copiar chave PIX</button>
+    </div>
+    <div style="font-size:13px;color:#6b7280;line-height:2.2;margin-bottom:20px">
+      <div>1. Copie a chave PIX</div><div>2. Abra o app do seu banco</div>
+      <div>3. Envie R$ 29,00</div><div>4. Clique em "Confirmar pagamento"</div>
+    </div>
+    <button class="btn btn-g" style="width:100%;justify-content:center" id="pay-btn" onclick="confirmPay()">Confirmar pagamento ✓</button>
+    <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:10px">Após confirmar seu QR Code será liberado</p>
+  </div>
+</div>
+
+<!-- ═══ FICHA DO PACIENTE ════════════════════════════════════ -->
+<div id="pg-patient" class="page" style="padding-bottom:40px;background:#f3f4f6">
+  <div class="ph">
+    <div style="width:40px;height:40px;background:rgba(255,255,255,.2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2v18M2 11h18" stroke="white" stroke-width="3" stroke-linecap="round"/></svg>
+    </div>
+    <div><h1>Sua ficha Easy Care</h1><p>Apresente ou imprima seu QR Code</p></div>
+  </div>
+  <div class="pb">
+    <div class="pc" style="text-align:center">
+      <div class="pt" style="text-align:left">Seu QR Code de emergência</div>
+      <div id="qr-pat" style="display:inline-block;margin:10px 0 12px"></div>
+      <p style="font-size:13px;color:#6b7280;margin-bottom:14px">Profissionais de saúde escaneiam para ver seus dados em emergências</p>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-g btn-sm" onclick="printQR('qr-pat')">Imprimir QR</button>
+        <button class="btn btn-w btn-sm" onclick="shareLink()">Compartilhar link</button>
+        <button class="btn btn-w btn-sm" onclick="showEditPat()">✏️ Atualizar ficha</button>
+      </div>
+    </div>
+    <div id="pat-body"></div>
+    <p style="text-align:center;font-size:12px;color:#9ca3af;margin-top:8px;padding-bottom:16px">Easy Care · Dados protegidos por LGPD</p>
+  </div>
+</div>
+
+<!-- ═══ LOGIN PACIENTE ══════════════════════════════════════ -->
+<div id="pg-plogin" class="page" style="padding-bottom:40px">
+  <div class="topbar">
+    <div class="tl">
+      <div class="logo"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2v14M2 9h14" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+      <h1>Easy Care</h1>
+    </div>
+    <button class="btn btn-w btn-sm" onclick="showPage('pg-home')">← Voltar</button>
+  </div>
+  <div style="max-width:400px;margin:0 auto;padding:32px 16px">
+    <div style="text-align:center;margin-bottom:24px">
+      <h2 style="font-size:22px;font-weight:700">Acessar minha ficha</h2>
+      <p style="font-size:14px;color:#6b7280;margin-top:4px">Entre com e-mail e senha cadastrados</p>
+    </div>
+    <div class="card" style="padding:24px">
+      <div id="pl-err" style="display:none;background:#FCEBEB;color:#A32D2D;font-size:13px;padding:10px 13px;border-radius:10px;margin-bottom:14px"></div>
+      <div class="f"><label>E-mail</label><input type="email" id="pl-email" placeholder="seu@email.com"></div>
+      <div class="f"><label>Senha</label><input type="password" id="pl-pass" placeholder="••••••••"></div>
+      <button class="btn btn-g" style="width:100%;justify-content:center;margin-top:4px" onclick="patLogin()">Acessar minha ficha</button>
+      <div style="text-align:center;margin-top:12px">
+        <button onclick="toggleForgot()" style="background:none;border:none;color:#6b7280;font-size:13px;cursor:pointer;text-decoration:underline">Esqueci minha senha</button>
+      </div>
+      <div style="text-align:center;margin-top:6px">
+        <span style="font-size:13px;color:#6b7280">Ainda não tem ficha? </span>
+        <button onclick="showForm()" style="background:none;border:none;color:#0F6E56;font-size:13px;font-weight:600;cursor:pointer">Cadastrar-se</button>
+      </div>
+      <div id="forgot-box" style="display:none;margin-top:20px;padding-top:20px;border-top:1px solid #e5e7eb">
+        <div style="font-size:15px;font-weight:600;margin-bottom:4px">Recuperar senha</div>
+        <div style="font-size:13px;color:#6b7280;margin-bottom:12px">Digite seu e-mail para receber o link de redefinição</div>
+        <div id="frgt-err" style="display:none;background:#FCEBEB;color:#A32D2D;font-size:13px;padding:10px 13px;border-radius:10px;margin-bottom:12px"></div>
+        <div id="frgt-ok" style="display:none;background:#E1F5EE;color:#085041;font-size:13px;padding:10px 13px;border-radius:10px;margin-bottom:12px">E-mail enviado! Verifique sua caixa de entrada.</div>
+        <div class="f"><input type="email" id="frgt-email" placeholder="seu@email.com"></div>
+        <button class="btn btn-g btn-sm" style="width:100%;justify-content:center" onclick="sendReset()">Enviar link</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ REDEFINIR SENHA ══════════════════════════════════════ -->
+<div id="pg-reset" class="page" style="padding-bottom:40px">
+  <div class="topbar">
+    <div class="tl">
+      <div class="logo"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2v14M2 9h14" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+      <h1>Easy Care</h1>
+    </div>
+  </div>
+  <div style="max-width:400px;margin:0 auto;padding:32px 16px">
+    <div class="card" style="padding:24px">
+      <h2 style="font-size:20px;font-weight:700;margin-bottom:6px">Criar nova senha</h2>
+      <p style="font-size:14px;color:#6b7280;margin-bottom:20px">Digite sua nova senha abaixo.</p>
+      <div id="rst-err" style="display:none;background:#FCEBEB;color:#A32D2D;font-size:13px;padding:10px 13px;border-radius:10px;margin-bottom:12px"></div>
+      <div class="f"><label>Nova senha</label><input type="password" id="rst-pass" placeholder="Mínimo 6 caracteres"></div>
+      <div class="f"><label>Confirmar nova senha</label><input type="password" id="rst-pass2" placeholder="Repita a senha"></div>
+      <button class="btn btn-g" style="width:100%;justify-content:center;margin-top:4px" id="rst-btn" onclick="doReset()">Salvar nova senha</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EMERGÊNCIA ═══════════════════════════════════════════ -->
+<div id="pg-emg" class="page" style="background:#f3f4f6;padding-bottom:40px">
+  <div class="eh">
+    <div class="ei"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2v18M2 11h18" stroke="white" stroke-width="3" stroke-linecap="round"/></svg></div>
+    <div><h1>Easy Care — Emergência</h1><p>Informações médicas críticas</p></div>
+  </div>
+  <div class="eb" id="emgbody"><div class="ld"><span class="spin"></span>Carregando...</div></div>
+</div>
+
+<!-- MODAL QR -->
+<div class="overlay" id="m-qr">
+  <div class="modal">
+    <div class="modal-h"><h2 id="m-qr-t">QR Code</h2><button class="modal-x" onclick="closeM('m-qr')">×</button></div>
+    <div class="modal-b"><div class="qrc"><div id="qr-modal"></div><p>Escaneie em emergências</p></div></div>
+    <div class="modal-f"><button class="btn btn-w" onclick="closeM('m-qr')">Fechar</button><button class="btn btn-g" onclick="printQR('qr-modal')">Imprimir</button></div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR ADMIN -->
+<div class="overlay" id="m-edit" style="align-items:flex-start;padding-top:24px">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-h"><h2>Editar paciente</h2><button class="modal-x" onclick="closeM('m-edit')">×</button></div>
+    <div class="modal-b" id="edit-body"></div>
+    <div class="modal-f"><button class="btn btn-w" onclick="closeM('m-edit')">Cancelar</button><button class="btn btn-g" onclick="saveEdit()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR FICHA PACIENTE -->
+<div class="overlay" id="m-pedit" style="align-items:flex-start;padding-top:24px">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-h"><h2>Atualizar minha ficha</h2><button class="modal-x" onclick="closeM('m-pedit')">×</button></div>
+    <div class="modal-b" id="pedit-body"></div>
+    <div class="modal-f"><button class="btn btn-w" onclick="closeM('m-pedit')">Cancelar</button><button class="btn btn-g" onclick="savePatEdit()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- MODAL EXCLUIR -->
+<div class="overlay" id="m-del">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-h"><h2>Excluir paciente</h2><button class="modal-x" onclick="closeM('m-del')">×</button></div>
+    <div class="modal-b"><p style="font-size:15px;line-height:1.6">Excluir <strong id="del-name"></strong>?<br>Esta ação não pode ser desfeita.</p></div>
+    <div class="modal-f"><button class="btn btn-w" onclick="closeM('m-del')">Cancelar</button><button class="btn btn-r" onclick="doDelete()">Excluir</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// CONFIG
+var SB = 'https://eyeoxbxpihlsgogpmynl.supabase.co';
+var SK = 'sb_publishable_pUoDuhp1wBgdkSl51dOzsQ_wkanoZvj';
+var EMAIL_FN = 'https://eyeoxbxpihlsgogpmynl.supabase.co/functions/v1/send-email';
+var ADMIN_EMAIL = 'jose.fernandes@easycare.com.br';
+var ADMIN_PASS = 'Doffy312.';
+
+function hdr(x) {
+  var h = {'Content-Type':'application/json','apikey':SK,'Authorization':'Bearer '+SK};
+  if (x) { for (var k in x) h[k] = x[k]; }
+  return h;
+}
+
+// DB HELPERS
+async function dbGet(q) {
+  var r = await fetch(SB+'/rest/v1/patients?order=created_at.desc'+(q||''), {headers:hdr()});
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function dbPost(d) {
+  var r = await fetch(SB+'/rest/v1/patients', {method:'POST',headers:hdr({'Prefer':'return=representation'}),body:JSON.stringify(d)});
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function dbPatch(id, d) {
+  var r = await fetch(SB+'/rest/v1/patients?id=eq.'+id, {method:'PATCH',headers:hdr({'Prefer':'return=representation'}),body:JSON.stringify(d)});
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function dbDel(id) {
+  var r = await fetch(SB+'/rest/v1/patients?id=eq.'+id, {method:'DELETE',headers:hdr()});
+  if (!r.ok) throw new Error(await r.text());
+}
+async function dbTok(tok) {
+  var r = await fetch(SB+'/rest/v1/patients?token=eq.'+encodeURIComponent(tok)+'&limit=1', {headers:hdr()});
+  if (!r.ok) throw new Error(await r.text());
+  var rows = await r.json();
+  return rows[0]||null;
+}
+
+// EMAIL
+async function sendEmail(type, to, name, qr_url, token) {
+  try {
+    await fetch(EMAIL_FN, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SK},
+      body:JSON.stringify({type:type,to:to,name:name,qr_url:qr_url,token:token})
+    });
+  } catch(e) { console.log('Email:', e.message); }
+}
+
+// PAGE MANAGEMENT
+function showPage(id) {
+  var pages = ['pg-home','pg-login','pg-admin','pg-form','pg-pay','pg-patient','pg-plogin','pg-reset','pg-emg'];
+  for (var i = 0; i < pages.length; i++) {
+    document.getElementById(pages[i]).style.display = 'none';
+  }
+  var el = document.getElementById(id);
+  if (id === 'pg-pay') el.style.display = 'flex';
+  else if (id === 'pg-login') el.style.display = 'flex';
+  else el.style.display = 'block';
+  window.scrollTo(0,0);
+}
+
+function showForm() { loadPubForm(); }
+function showPLogin() { showPage('pg-plogin'); }
+function showAdminLogin() { showPage('pg-login'); }
+
+// ROUTING
+function getHash() { return decodeURIComponent(window.location.hash.replace('#','')); }
+window.addEventListener('hashchange', route);
+window.addEventListener('load', function() {
+  showPage('pg-home');
+  var h = getHash();
+  if (h) route();
+});
+
+function route() {
+  var h = getHash();
+  if (!h) { showPage('pg-home'); return; }
+  if (h.startsWith('e/')) { loadEmg(h.replace('e/','')); return; }
+  if (h === 'form') { loadPubForm(); return; }
+  if (h === 'minha-ficha') { showPage('pg-plogin'); return; }
+  if (h.startsWith('reset/')) { loadReset(h.replace('reset/','')); return; }
+  showPage('pg-home');
+}
+
+// ADMIN AUTH
+function doAdminLogin() {
+  var e = document.getElementById('l-email').value.trim();
+  var p = document.getElementById('l-pass').value;
+  var err = document.getElementById('l-err');
+  if (e === ADMIN_EMAIL && p === ADMIN_PASS) {
+    err.style.display = 'none';
+    showPage('pg-admin');
+    document.getElementById('pg-admin').style.display = 'flex';
+    document.getElementById('flink').textContent = 'https://effortless-dusk-e19d24.netlify.app/#form';
+    goTab(1);
+  } else {
+    err.textContent = 'E-mail ou senha incorretos.';
+    err.style.display = 'block';
+  }
+}
+function doLogout() { showPage('pg-home'); }
+
+// TABS
+function goTab(n) {
+  document.getElementById('tab1').style.display = n===1 ? 'block' : 'none';
+  document.getElementById('tab2').style.display = n===2 ? 'block' : 'none';
+  document.getElementById('nb1').classList.toggle('on', n===1);
+  document.getElementById('nb2').classList.toggle('on', n===2);
+  if (n===1) loadList();
+  if (n===2) initAdmForm();
+}
+
+// LIST
+var allPts = [];
+async function loadList() {
+  document.getElementById('tld').style.display = 'block';
+  document.getElementById('tem').style.display = 'none';
+  document.getElementById('tbody').innerHTML = '';
+  try {
+    allPts = await dbGet();
+    renderTbl(allPts);
+  } catch(e) { toast('Erro: '+e.message,'ko'); }
+  document.getElementById('tld').style.display = 'none';
+}
+function doSearch() {
+  var q = (document.getElementById('sq').value||'').toLowerCase();
+  renderTbl(q ? allPts.filter(function(p){
+    return ((p.first_name||'')+' '+(p.last_name||'')).toLowerCase().indexOf(q)>=0 || (p.cpf||'').indexOf(q)>=0;
+  }) : allPts);
+}
+function renderTbl(pts) {
+  var today = new Date().toISOString().slice(0,10);
+  document.getElementById('mets').innerHTML =
+    '<div class="met"><div style="font-size:12px;color:#6b7280;margin-bottom:5px">Total</div><div style="font-size:26px;font-weight:700">'+allPts.length+'</div></div>'+
+    '<div class="met"><div style="font-size:12px;color:#6b7280;margin-bottom:5px">Hoje</div><div style="font-size:26px;font-weight:700">'+allPts.filter(function(p){return p.created_at&&p.created_at.startsWith(today);}).length+'</div></div>'+
+    '<div class="met"><div style="font-size:12px;color:#6b7280;margin-bottom:5px">Com sangue</div><div style="font-size:26px;font-weight:700">'+allPts.filter(function(p){return p.blood;}).length+'</div></div>';
+  if (!pts.length) { document.getElementById('tbody').innerHTML=''; document.getElementById('tem').style.display='block'; return; }
+  document.getElementById('tem').style.display='none';
+  var h='';
+  for (var i=0; i<pts.length; i++) {
+    var p=pts[i];
+    h+='<tr>'+
+      '<td><strong>'+xs(p.first_name)+' '+xs(p.last_name)+'</strong></td>'+
+      '<td style="color:#6b7280">'+xs(p.cpf||'—')+'</td>'+
+      '<td style="color:#6b7280">'+fd(p.dob)+'</td>'+
+      '<td style="color:#6b7280">'+xs(p.phone||'—')+'</td>'+
+      '<td>'+(p.blood?'<span class="bpill">'+xs(p.blood)+'</span>':'<span style="color:#9ca3af">—</span>')+'</td>'+
+      '<td><div style="display:flex;gap:5px">'+
+        '<button class="ibtn" onclick="showQR(\''+p.id+'\',\''+xs(p.first_name+' '+p.last_name)+'\',\''+p.token+'\')">📱</button>'+
+        '<button class="ibtn" onclick="window.open(\'https://effortless-dusk-e19d24.netlify.app/#e/'+p.token+'\',\'_blank\')">🚨</button>'+
+        '<button class="ibtn" onclick="editPt(\''+p.id+'\')">✏️</button>'+
+        '<button class="ibtn" onclick="askDel(\''+p.id+'\',\''+xs(p.first_name+' '+p.last_name)+'\')">🗑️</button>'+
+      '</div></td></tr>';
+  }
+  document.getElementById('tbody').innerHTML = h;
+}
+function copyFL() { navigator.clipboard.writeText('https://effortless-dusk-e19d24.netlify.app/#form').then(function(){ toast('Link copiado!','ok'); }); }
+
+// QR
+function showQR(id, name, tok) {
+  document.getElementById('m-qr-t').textContent = 'QR — '+name;
+  var w = document.getElementById('qr-modal'); w.innerHTML = '';
+  new QRCode(w,{text:'https://effortless-dusk-e19d24.netlify.app/#e/'+tok,width:220,height:220,colorDark:'#0F6E56',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
+  openM('m-qr');
+}
+function printQR(eid) {
+  var img = document.querySelector('#'+eid+' img'); if(!img) return;
+  var w = window.open('','_blank');
+  w.document.write('<html><body style="text-align:center;padding:40px;font-family:sans-serif"><img src="'+img.src+'" width="260"><p style="margin-top:14px;color:#6b7280;font-size:13px">Easy Care — QR Code de Emergência</p></body></html>');
+  w.document.close(); w.print();
+}
+
+// EDIT ADMIN
+var editId = null;
+function editPt(id) {
+  editId = id;
+  var p = null;
+  for (var i=0; i<allPts.length; i++) { if (allPts[i].id===id) { p=allPts[i]; break; } }
+  if (!p) return;
+  document.getElementById('edit-body').innerHTML =
+    '<div class="g2"><div class="f"><label>Nome</label><input id="e1" value="'+xs(p.first_name||'')+'"></div><div class="f"><label>Sobrenome</label><input id="e2" value="'+xs(p.last_name||'')+'"></div></div>'+
+    '<div class="g2"><div class="f"><label>CPF</label><input id="e3" value="'+xs(p.cpf||'')+'"></div><div class="f"><label>Telefone</label><input id="e4" value="'+xs(p.phone||'')+'"></div></div>'+
+    '<div class="g3"><div class="f"><label>Sangue</label><select id="e5">'+['','A+','A-','B+','B-','AB+','AB-','O+','O-','Não sei'].map(function(v){return'<option'+(p.blood===v?' selected':'')+'>'+v+'</option>';}).join('')+'</select></div>'+
+    '<div class="f"><label>Altura</label><input id="e6" type="number" value="'+xs(p.height||'')+'"></div><div class="f"><label>Peso</label><input id="e7" type="number" value="'+xs(p.weight||'')+'"></div></div>'+
+    '<div class="f"><label>Alergias (vírgula)</label><textarea id="e-alg" rows="2">'+xs((p.allergies||[]).join(', '))+'</textarea></div>'+
+    '<div class="f"><label>Medicamentos (vírgula)</label><textarea id="e-med" rows="2">'+xs((p.medications||[]).join(', '))+'</textarea></div>'+
+    '<div class="f"><label>Condições (vírgula)</label><textarea id="e-cond" rows="2">'+xs((p.conditions||[]).join(', '))+'</textarea></div>'+
+    '<div class="f"><label>Cirurgias</label><textarea id="e8">'+xs(p.surgeries||'')+'</textarea></div>'+
+    '<div class="g2"><div class="f"><label>Contato emerg.</label><input id="e9" value="'+xs(p.ec_name||'')+'"></div><div class="f"><label>Tel. emerg.</label><input id="e10" value="'+xs(p.ec_phone||'')+'"></div></div>'+
+    '<div class="g2"><div class="f"><label>Convênio</label><input id="e11" value="'+xs(p.insurance||'')+'"></div><div class="f"><label>Nº convênio</label><input id="e12" value="'+xs(p.ins_num||'')+'"></div></div>';
+  openM('m-edit');
+}
+async function saveEdit() {
+  try {
+    await dbPatch(editId,{first_name:gv('e1'),last_name:gv('e2'),cpf:gv('e3'),phone:gv('e4'),blood:gv('e5'),height:gv('e6'),weight:gv('e7'),allergies:split(gv('e-alg')),medications:split(gv('e-med')),conditions:split(gv('e-cond')),surgeries:gv('e8'),ec_name:gv('e9'),ec_phone:gv('e10'),insurance:gv('e11'),ins_num:gv('e12')});
+    closeM('m-edit'); await loadList(); toast('Atualizado!','ok');
+  } catch(e) { toast('Erro: '+e.message,'ko'); }
+}
+
+// DELETE
+var delId = null;
+function askDel(id, name) { delId=id; document.getElementById('del-name').textContent=name; openM('m-del'); }
+async function doDelete() {
+  try { await dbDel(delId); closeM('m-del'); await loadList(); toast('Excluído','ok'); }
+  catch(e) { toast('Erro: '+e.message,'ko'); }
+}
+
+// FORM
+var rPhoto = '';
+function split(str) {
+  if (!str||!str.trim()) return [];
+  return str.split(',').map(function(s){return s.trim();}).filter(function(s){return s.length>0;});
+}
+function buildForm(px) {
+  var states = 'AC,AL,AP,AM,BA,CE,DF,ES,GO,MA,MT,MS,MG,PA,PB,PR,PE,PI,RJ,RN,RS,RO,RR,SC,SP,SE,TO'.split(',');
+  var stateOpts = '<option value="">UF</option>'+states.map(function(s){return'<option>'+s+'</option>';}).join('');
+  var bloodOpts = ['','A+','A-','B+','B-','AB+','AB-','O+','O-','Não sei'].map(function(v){return'<option>'+v+'</option>';}).join('');
+  return '<div class="card">'+
+    '<div class="sh"><div class="si ig">👤</div><div><h3>Dados pessoais</h3><p>Nome, CPF, nascimento e sexo.</p></div></div>'+
+    '<div class="photo-up"><input type="file" accept="image/*" id="ph-inp" onchange="handlePh()"><img id="ph-prev" alt=""><div id="ph-ph"><div style="font-size:24px;margin-bottom:6px">📷</div><div style="font-size:14px;font-weight:500;color:#0F6E56">Adicionar foto</div><div style="font-size:12px;color:#6b7280">Opcional</div></div></div>'+
+    '<div class="g2"><div class="f" id="'+px+'-ffn"><label>Nome <span class="req">*</span></label><input id="'+px+'-fn" placeholder="João"><span class="errmsg">Obrigatório</span></div>'+
+    '<div class="f" id="'+px+'-fln"><label>Sobrenome <span class="req">*</span></label><input id="'+px+'-ln" placeholder="da Silva"><span class="errmsg">Obrigatório</span></div></div>'+
+    '<div class="g3"><div class="f" id="'+px+'-fcpf"><label>CPF <span class="req">*</span></label><input id="'+px+'-cpf" placeholder="000.000.000-00" maxlength="14" oninput="maskCPF(this)"><span class="errmsg">CPF inválido</span></div>'+
+    '<div class="f"><label>RG</label><input id="'+px+'-rg" placeholder="00.000.000-0"></div>'+
+    '<div class="f" id="'+px+'-fdob"><label>Nascimento <span class="req">*</span></label><input type="date" id="'+px+'-dob"><span class="errmsg">Obrigatório</span></div></div>'+
+    '<div class="g2"><div class="f"><label>Sexo</label><select id="'+px+'-gn"><option value="">Selecione...</option><option>Masculino</option><option>Feminino</option><option>Não binário</option><option>Prefiro não informar</option></select></div>'+
+    '<div class="f"><label>Nacionalidade</label><input id="'+px+'-nat" placeholder="Brasileira"></div></div></div>'+
+    '<div class="card"><div class="sh"><div class="si ib">📞</div><div><h3>Contato</h3></div></div>'+
+    '<div class="g2"><div class="f" id="'+px+'-fph"><label>Telefone <span class="req">*</span></label><input type="tel" id="'+px+'-ph" placeholder="(11) 99999-9999" maxlength="15" oninput="maskPhone(this)"><span class="errmsg">Obrigatório</span></div>'+
+    '<div class="f"><label>E-mail</label><input type="email" id="'+px+'-em" placeholder="joao@email.com"></div></div>'+
+    '<div class="f"><label>Endereço</label><input id="'+px+'-ad" placeholder="Rua, número, bairro"></div>'+
+    '<div class="g3"><div class="f s2"><label>Cidade</label><input id="'+px+'-ci" placeholder="São Paulo"></div>'+
+    '<div class="f"><label>UF</label><select id="'+px+'-st">'+stateOpts+'</select></div></div></div>'+
+    '<div class="card"><div class="sh"><div class="si ir">🚨</div><div><h3>Emergência e convênio</h3></div></div>'+
+    '<div class="g2"><div class="f"><label>Nome do contato</label><input id="'+px+'-en" placeholder="Maria da Silva"></div>'+
+    '<div class="f"><label>Parentesco</label><select id="'+px+'-er"><option value="">Selecione...</option><option>Cônjuge / Parceiro(a)</option><option>Pai / Mãe</option><option>Filho(a)</option><option>Irmão / Irmã</option><option>Amigo(a)</option><option>Outro</option></select></div></div>'+
+    '<div class="g2"><div class="f"><label>Tel. emergência</label><input type="tel" id="'+px+'-ep" placeholder="(11) 98888-0000" maxlength="15" oninput="maskPhone(this)"></div>'+
+    '<div class="f"><label>Plano de saúde</label><input id="'+px+'-ins" placeholder="Unimed"></div></div>'+
+    '<div class="f"><label>Nº convênio</label><input id="'+px+'-inn" placeholder="123456"></div></div>'+
+    '<div class="card"><div class="sh"><div class="si ia">🩺</div><div><h3>Histórico médico</h3></div></div>'+
+    '<div class="g3"><div class="f"><label>Tipo sanguíneo</label><select id="'+px+'-bl"><option value="">Selecione...</option>'+bloodOpts+'</select></div>'+
+    '<div class="f"><label>Altura (cm)</label><input type="number" id="'+px+'-ht" placeholder="175"></div>'+
+    '<div class="f"><label>Peso (kg)</label><input type="number" id="'+px+'-wt" placeholder="70"></div></div>'+
+    '<div class="f"><label>Alergias</label><textarea id="'+px+'-alg" rows="2" placeholder="Ex: Penicilina, Dipirona (separe por vírgula)"></textarea></div>'+
+    '<div class="f"><label>Medicamentos em uso</label><textarea id="'+px+'-med" rows="2" placeholder="Ex: Metformina 500mg, Losartana 50mg (separe por vírgula)"></textarea></div>'+
+    '<div class="f"><label>Condições médicas / doenças</label><textarea id="'+px+'-cond" rows="2" placeholder="Ex: Diabetes tipo 2, Hipertensão (separe por vírgula)"></textarea></div>'+
+    '<div class="f"><label>Cirurgias anteriores</label><textarea id="'+px+'-sg" rows="2" placeholder="Ex: Apendicite (2018)"></textarea></div></div>'+
+    '<div class="card"><div class="sh"><div class="si ip">♿</div><div><h3>Necessidades especiais</h3></div></div>'+
+    '<div class="f"><label>Deficiências / necessidades</label><textarea id="'+px+'-dis" rows="2" placeholder="Ex: Deficiência visual (separe por vírgula)"></textarea></div>'+
+    '<div class="f"><label>Observações</label><textarea id="'+px+'-do" rows="2" placeholder="Necessidades específicas..."></textarea></div></div>'+
+    '<div class="card" style="border:2px solid #1D9E75"><div class="sh"><div class="si ib">🔑</div><div><h3>Crie sua senha de acesso</h3><p>Use para acessar sua ficha a qualquer momento.</p></div></div>'+
+    '<div class="f"><label>E-mail de acesso <span class="req">*</span></label><input type="email" id="'+px+'-ae" placeholder="seu@email.com"></div>'+
+    '<div class="g2"><div class="f"><label>Senha <span class="req">*</span></label><input type="password" id="'+px+'-ap" placeholder="Mínimo 6 caracteres"></div>'+
+    '<div class="f"><label>Confirmar senha <span class="req">*</span></label><input type="password" id="'+px+'-ap2" placeholder="Repita a senha"></div></div></div>'+
+    '<div class="card"><div class="sh"><div class="si ig">🔒</div><div><h3>LGPD — Consentimento</h3></div></div>'+
+    '<div class="lgpd">Dados usados <strong>exclusivamente para emergências médicas</strong>, conforme a <strong>Lei 13.709/2018 (LGPD)</strong>.</div>'+
+    '<div class="chk"><input type="checkbox" id="'+px+'-l1"><label for="'+px+'-l1">Concordo com o armazenamento dos dados para fins de emergência. <span class="req">*</span></label></div>'+
+    '<div class="chk"><input type="checkbox" id="'+px+'-l2"><label for="'+px+'-l2">Li e aceito os Termos de Uso e Política de Privacidade. <span class="req">*</span></label></div>'+
+    '<div class="chk"><input type="checkbox" id="'+px+'-l3"><label for="'+px+'-l3">Autorizo compartilhamento com profissionais via QR Code.</label></div></div>';
+}
+
+function handlePh() {
+  var f = document.getElementById('ph-inp');
+  if (!f||!f.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    rPhoto = ev.target.result;
+    var img = document.getElementById('ph-prev');
+    if (img) { img.src=ev.target.result; img.style.display='block'; }
+    var ph = document.getElementById('ph-ph');
+    if (ph) ph.style.display='none';
+  };
+  reader.readAsDataURL(f.files[0]);
+}
+
+function collectData(px, tok) {
+  return {
+    token: tok,
+    first_name: gv(px+'-fn'), last_name: gv(px+'-ln'),
+    cpf: gv(px+'-cpf'), rg: gv(px+'-rg'), dob: gv(px+'-dob'),
+    gender: gv(px+'-gn'), nationality: gv(px+'-nat'),
+    phone: gv(px+'-ph'), email: gv(px+'-em'),
+    address: gv(px+'-ad'), city: gv(px+'-ci'), state: gv(px+'-st'),
+    ec_name: gv(px+'-en'), ec_rel: gv(px+'-er'), ec_phone: gv(px+'-ep'),
+    insurance: gv(px+'-ins'), ins_num: gv(px+'-inn'),
+    blood: gv(px+'-bl'), height: gv(px+'-ht'), weight: gv(px+'-wt'),
+    allergies: split(gv(px+'-alg')),
+    medications: split(gv(px+'-med')),
+    conditions: split(gv(px+'-cond')),
+    surgeries: gv(px+'-sg'),
+    disabilities: split(gv(px+'-dis')),
+    dis_obs: gv(px+'-do'),
+    login_email: gv(px+'-ae'),
+    access_pass: gv(px+'-ap'),
+    photo: rPhoto, lgpd: true
+  };
+}
+
+function validateForm(px) {
+  var ok = true;
+  var req = [[px+'-fn',px+'-ffn'],[px+'-ln',px+'-fln'],[px+'-dob',px+'-fdob'],[px+'-ph',px+'-fph']];
+  for (var i=0; i<req.length; i++) {
+    var el = document.getElementById(req[i][0]);
+    var w = document.getElementById(req[i][1]);
+    if (!el||!el.value.trim()) { if(w) w.classList.add('err'); ok=false; }
+    else { if(w) w.classList.remove('err'); }
+  }
+  return ok;
+}
+
+var pendingData = null, pendingTok = null;
+
+function loadPubForm() {
+  rPhoto = '';
+  showPage('pg-form');
+  var html = buildForm('p');
+  html += '<div style="display:flex;gap:10px;padding-bottom:32px">';
+  html += '<button class="btn btn-g" id="submit-btn">Enviar cadastro</button>';
+  html += '<button class="btn btn-w" id="clear-btn">Limpar</button></div>';
+  document.getElementById('pubform').innerHTML = html;
+  document.getElementById('pubok').style.display = 'none';
+  document.getElementById('pubform').style.display = '';
+  document.getElementById('submit-btn').addEventListener('click', function() { doSubmitPub(); });
+  document.getElementById('clear-btn').addEventListener('click', function() { loadPubForm(); });
+}
+
+function initAdmForm() {
+  rPhoto = '';
+  var html = buildForm('a');
+  html += '<div style="display:flex;gap:10px;padding-bottom:32px">';
+  html += '<button class="btn btn-g" id="adm-submit-btn">Cadastrar paciente</button>';
+  html += '<button class="btn btn-w" id="adm-clear-btn">Limpar</button></div>';
+  document.getElementById('admform').innerHTML = html;
+  document.getElementById('admok').style.display = 'none';
+  document.getElementById('admform').style.display = '';
+  document.getElementById('adm-submit-btn').addEventListener('click', function() { doSubmitAdm(); });
+  document.getElementById('adm-clear-btn').addEventListener('click', function() { initAdmForm(); });
+}
+
+async function doSubmitPub() {
+  if (!validateForm('p')) { window.scrollTo({top:0,behavior:'smooth'}); return; }
+  var l1 = document.getElementById('p-l1');
+  var l2 = document.getElementById('p-l2');
+  if (!l1||!l1.checked||!l2||!l2.checked) { toast('Aceite os termos de LGPD','ko'); return; }
+  var ae = gv('p-ae'), ap = gv('p-ap'), ap2 = gv('p-ap2');
+  if (!ae) { toast('Preencha o e-mail de acesso','ko'); return; }
+  if (!ap||ap.length<6) { toast('Senha deve ter no mínimo 6 caracteres','ko'); return; }
+  if (ap!==ap2) { toast('As senhas não coincidem','ko'); return; }
+  var tok = 'tok'+Math.random().toString(36).slice(2)+Date.now().toString(36);
+  pendingData = collectData('p', tok);
+  pendingTok = tok;
+  showPage('pg-pay');
+}
+
+async function doSubmitAdm() {
+  if (!validateForm('a')) { window.scrollTo({top:0,behavior:'smooth'}); return; }
+  var tok = 'tok'+Math.random().toString(36).slice(2)+Date.now().toString(36);
+  var data = collectData('a', tok);
+  var btn = document.getElementById('adm-submit-btn');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+  try {
+    await dbPost(data);
+    document.getElementById('admform').style.display = 'none';
+    document.getElementById('admok').style.display = 'block';
+    var w = document.getElementById('qr-adm'); w.innerHTML = '';
+    new QRCode(w,{text:'https://effortless-dusk-e19d24.netlify.app/#e/'+tok,width:200,height:200,colorDark:'#0F6E56',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
+    window.scrollTo({top:0,behavior:'smooth'});
+    toast('Cadastro salvo!','ok');
+  } catch(e) {
+    toast('Erro: '+e.message,'ko');
+    btn.disabled=false; btn.textContent='Cadastrar paciente';
+  }
+}
+
+// PAYMENT
+function copyPix() { navigator.clipboard.writeText('contato@easycare.com.br').then(function(){ toast('Chave PIX copiada!','ok'); }); }
+
+async function confirmPay() {
+  var btn = document.getElementById('pay-btn');
+  btn.disabled=true; btn.textContent='Salvando...';
+  try {
+    await dbPost(pendingData);
+    showPatCard(pendingData, pendingTok);
+    // Send confirmation email
+    var emailTo = pendingData.login_email || pendingData.email;
+    if (emailTo) {
+      var name = ((pendingData.first_name||'')+' '+(pendingData.last_name||'')).trim();
+      sendEmail('confirmation', emailTo, name, 'https://effortless-dusk-e19d24.netlify.app/#e/'+pendingTok, pendingTok);
+    }
+    toast('QR Code liberado! Verifique seu e-mail.','ok');
+  } catch(e) {
+    toast('Erro: '+e.message,'ko');
+    btn.disabled=false; btn.textContent='Confirmar pagamento ✓';
+  }
+}
+
+// PATIENT CARD
+function showPatCard(p, tok) {
+  showPage('pg-patient');
+  var url = 'https://effortless-dusk-e19d24.netlify.app/#e/'+tok;
+  var w = document.getElementById('qr-pat'); w.innerHTML='';
+  new QRCode(w,{text:url,width:200,height:200,colorDark:'#0F6E56',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
+  var tags = function(arr,cls){ return (arr||[]).map(function(v){ return '<span class="tag '+cls+'">'+xs(v)+'</span>'; }).join(''); };
+  var age = p.dob ? Math.floor((new Date()-new Date(p.dob))/31557600000)+' anos' : '—';
+  var h = '<div class="pc">'+
+    (p.photo?'<img src="'+p.photo+'" style="width:60px;height:60px;border-radius:50%;object-fit:cover;float:left;margin-right:14px;border:2px solid #1D9E75" alt="">':'')+
+    '<div class="pt">Seus dados</div>'+
+    '<div style="font-size:18px;font-weight:700;margin-bottom:3px">'+(p.first_name||'')+' '+(p.last_name||'')+'</div>'+
+    '<div style="font-size:13px;color:#6b7280;margin-bottom:12px;clear:both">'+age+(p.gender?' · '+xs(p.gender):'')+'</div>'+
+    '<div class="pr"><span class="pl">Tipo sanguíneo</span><span class="pv"><span class="bbl">'+(p.blood||'—')+'</span></span></div>'+
+    (p.weight?'<div class="pr"><span class="pl">Peso</span><span class="pv">'+xs(p.weight)+' kg</span></div>':'')+
+    (p.height?'<div class="pr"><span class="pl">Altura</span><span class="pv">'+xs(p.height)+' cm</span></div>':'')+
+    '</div>';
+  if ((p.allergies&&p.allergies.length)||(p.conditions&&p.conditions.length)) {
+    h += '<div class="pc" style="border:1.5px solid #F09595"><div class="pt" style="color:#A32D2D">⚠ Alertas críticos</div>'+
+      (p.allergies&&p.allergies.length?'<div style="margin-bottom:10px"><div style="font-size:12px;color:#6b7280;margin-bottom:6px">Alergias</div><div class="trow">'+tags(p.allergies,'t-r')+'</div></div>':'')+
+      (p.conditions&&p.conditions.length?'<div><div style="font-size:12px;color:#6b7280;margin-bottom:6px">Doenças / condições</div><div class="trow">'+tags(p.conditions,'t-a')+'</div></div>':'')+
+      '</div>';
+  }
+  if (p.medications&&p.medications.length) { h+='<div class="pc"><div class="pt">Medicamentos em uso</div><div class="trow">'+tags(p.medications,'t-b')+'</div></div>'; }
+  if (p.surgeries) { h+='<div class="pc"><div class="pt">Cirurgias anteriores</div><div style="font-size:14px;line-height:1.7">'+xs(p.surgeries)+'</div></div>'; }
+  h += '<div class="pc"><div class="pt">Contato de emergência</div>'+
+    '<div class="pr"><span class="pl">Nome</span><span class="pv">'+(p.ec_name||'—')+(p.ec_rel?' <span style="color:#9ca3af;font-size:12px">('+xs(p.ec_rel)+')</span>':'')+'</span></div>'+
+    '<div class="pr"><span class="pl">Telefone</span><span class="pv">'+(p.ec_phone?'<a href="tel:'+xs(p.ec_phone)+'" style="color:#0F6E56;font-weight:600">'+xs(p.ec_phone)+'</a>':'—')+'</span></div>'+
+    '<div class="pr"><span class="pl">Convênio</span><span class="pv">'+(p.insurance||'—')+(p.ins_num?' · '+xs(p.ins_num):'')+'</span></div></div>';
+  document.getElementById('pat-body').innerHTML = h;
+  pendingData = p;
+  pendingTok = tok;
+}
+
+function shareLink() {
+  var url = 'https://effortless-dusk-e19d24.netlify.app/#e/'+pendingTok;
+  if (navigator.share) { navigator.share({title:'Minha ficha Easy Care',url:url}); }
+  else { navigator.clipboard.writeText(url).then(function(){ toast('Link copiado!','ok'); }); }
+}
+
+// EDIT PATIENT OWN DATA
+function showEditPat() {
+  if (!pendingData) return;
+  document.getElementById('pedit-body').innerHTML =
+    '<div class="f"><label>Alergias (vírgula)</label><textarea id="pe-alg" rows="2">'+xs((pendingData.allergies||[]).join(', '))+'</textarea></div>'+
+    '<div class="f"><label>Medicamentos (vírgula)</label><textarea id="pe-med" rows="2">'+xs((pendingData.medications||[]).join(', '))+'</textarea></div>'+
+    '<div class="f"><label>Condições (vírgula)</label><textarea id="pe-cond" rows="2">'+xs((pendingData.conditions||[]).join(', '))+'</textarea></div>'+
+    '<div class="f"><label>Cirurgias</label><textarea id="pe-sg" rows="2">'+xs(pendingData.surgeries||'')+'</textarea></div>'+
+    '<div class="g2"><div class="f"><label>Contato emergência</label><input id="pe-en" value="'+xs(pendingData.ec_name||'')+'"></div>'+
+    '<div class="f"><label>Tel. emergência</label><input id="pe-ep" value="'+xs(pendingData.ec_phone||'')+'"></div></div>'+
+    '<div class="g2"><div class="f"><label>Convênio</label><input id="pe-ins" value="'+xs(pendingData.insurance||'')+'"></div>'+
+    '<div class="f"><label>Nº convênio</label><input id="pe-inn" value="'+xs(pendingData.ins_num||'')+'"></div></div>'+
+    '<div class="g3"><div class="f"><label>Sangue</label><select id="pe-bl">'+
+    ['','A+','A-','B+','B-','AB+','AB-','O+','O-','Não sei'].map(function(v){return'<option'+(pendingData.blood===v?' selected':'')+'>'+v+'</option>';}).join('')+
+    '</select></div><div class="f"><label>Altura</label><input id="pe-ht" type="number" value="'+xs(pendingData.height||'')+'"></div>'+
+    '<div class="f"><label>Peso</label><input id="pe-wt" type="number" value="'+xs(pendingData.weight||'')+'"></div></div>';
+  openM('m-pedit');
+}
+
+async function savePatEdit() {
+  var btn = event.target; btn.disabled=true; btn.textContent='Salvando...';
+  try {
+    var r = await fetch(SB+'/rest/v1/patients?token=eq.'+encodeURIComponent(pendingTok)+'&limit=1',{headers:hdr()});
+    var rows = await r.json();
+    if (!rows||!rows.length) throw new Error('Paciente não encontrado');
+    var updates = {
+      allergies:split(gv('pe-alg')),medications:split(gv('pe-med')),conditions:split(gv('pe-cond')),
+      surgeries:gv('pe-sg'),ec_name:gv('pe-en'),ec_phone:gv('pe-ep'),
+      insurance:gv('pe-ins'),ins_num:gv('pe-inn'),blood:gv('pe-bl'),height:gv('pe-ht'),weight:gv('pe-wt')
+    };
+    await dbPatch(rows[0].id, updates);
+    Object.assign(pendingData, updates);
+    closeM('m-pedit');
+    showPatCard(pendingData, pendingTok);
+    toast('Ficha atualizada!','ok');
+  } catch(e) { toast('Erro: '+e.message,'ko'); btn.disabled=false; btn.textContent='Salvar'; }
+}
+
+// PATIENT LOGIN
+async function patLogin() {
+  var email = document.getElementById('pl-email').value.trim().toLowerCase();
+  var pass = document.getElementById('pl-pass').value;
+  var err = document.getElementById('pl-err');
+  err.style.display='none';
+  if (!email||!pass) { err.textContent='Preencha e-mail e senha.'; err.style.display='block'; return; }
+  var btn = event.target; btn.disabled=true; btn.textContent='Buscando...';
+  try {
+    var q = 'or=(login_email.ilike.'+encodeURIComponent(email)+',email.ilike.'+encodeURIComponent(email)+')&access_pass=eq.'+encodeURIComponent(pass)+'&limit=1';
+    var r = await fetch(SB+'/rest/v1/patients?'+q, {headers:hdr()});
+    if (!r.ok) throw new Error(await r.text());
+    var rows = await r.json();
+    if (!rows||!rows.length) { err.textContent='E-mail ou senha incorretos.'; err.style.display='block'; btn.disabled=false; btn.textContent='Acessar minha ficha'; return; }
+    showPatCard(rows[0], rows[0].token);
+  } catch(e) { err.textContent='Erro: '+e.message; err.style.display='block'; btn.disabled=false; btn.textContent='Acessar minha ficha'; }
+}
+
+// FORGOT PASSWORD
+function toggleForgot() {
+  var box = document.getElementById('forgot-box');
+  box.style.display = box.style.display==='none' ? 'block' : 'none';
+}
+
+async function sendReset() {
+  var email = (document.getElementById('frgt-email').value||'').trim().toLowerCase();
+  var errEl = document.getElementById('frgt-err');
+  var okEl = document.getElementById('frgt-ok');
+  errEl.style.display='none'; okEl.style.display='none';
+  if (!email) { errEl.textContent='Digite seu e-mail.'; errEl.style.display='block'; return; }
+  var btn = event.target; btn.disabled=true; btn.textContent='Enviando...';
+  try {
+    var r = await fetch(SB+'/rest/v1/patients?or=(login_email.ilike.'+encodeURIComponent(email)+',email.ilike.'+encodeURIComponent(email)+')&limit=1',{headers:hdr()});
+    var rows = await r.json();
+    if (!rows||!rows.length) { errEl.textContent='E-mail não encontrado.'; errEl.style.display='block'; btn.disabled=false; btn.textContent='Enviar link'; return; }
+    var p = rows[0];
+    var tok = 'rst'+Math.random().toString(36).slice(2)+Date.now().toString(36);
+    var expires = new Date(Date.now()+3600000).toISOString();
+    await fetch(SB+'/rest/v1/patients?id=eq.'+p.id,{method:'PATCH',headers:hdr({'Prefer':'return=minimal'}),body:JSON.stringify({reset_token:tok,reset_expires:expires})});
+    await sendEmail('reset', email, ((p.first_name||'')+' '+(p.last_name||'')).trim(), '', tok);
+    okEl.style.display='block';
+    btn.disabled=false; btn.textContent='Enviar link';
+  } catch(e) { errEl.textContent='Erro: '+e.message; errEl.style.display='block'; btn.disabled=false; btn.textContent='Enviar link'; }
+}
+
+// RESET PASSWORD
+var resetTok = null;
+function loadReset(tok) {
+  resetTok = tok;
+  showPage('pg-reset');
+}
+
+async function doReset() {
+  var pass = gv('rst-pass'), pass2 = gv('rst-pass2');
+  var err = document.getElementById('rst-err');
+  err.style.display='none';
+  if (!pass||pass.length<6) { err.textContent='Senha deve ter no mínimo 6 caracteres.'; err.style.display='block'; return; }
+  if (pass!==pass2) { err.textContent='As senhas não coincidem.'; err.style.display='block'; return; }
+  var btn = document.getElementById('rst-btn'); btn.disabled=true; btn.textContent='Salvando...';
+  try {
+    var now = new Date().toISOString();
+    var r = await fetch(SB+'/rest/v1/patients?reset_token=eq.'+encodeURIComponent(resetTok)+'&reset_expires=gte.'+encodeURIComponent(now)+'&limit=1',{headers:hdr()});
+    var rows = await r.json();
+    if (!rows||!rows.length) { err.textContent='Link inválido ou expirado. Solicite um novo.'; err.style.display='block'; btn.disabled=false; btn.textContent='Salvar nova senha'; return; }
+    await dbPatch(rows[0].id, {access_pass:pass, reset_token:null, reset_expires:null});
+    toast('Senha redefinida!','ok');
+    setTimeout(function(){ showPage('pg-plogin'); }, 1500);
+  } catch(e) { err.textContent='Erro: '+e.message; err.style.display='block'; btn.disabled=false; btn.textContent='Salvar nova senha'; }
+}
+
+// EMERGENCY
+async function loadEmg(tok) {
+  showPage('pg-emg');
+  document.getElementById('emgbody').innerHTML='<div class="ld"><span class="spin"></span>Carregando...</div>';
+  try {
+    var p = await dbTok(tok);
+    if (!p) { document.getElementById('emgbody').innerHTML='<div style="text-align:center;padding:40px;color:#6b7280"><h3>QR Code inválido</h3><p>Código não encontrado.</p></div>'; return; }
+    var age = p.dob ? Math.floor((new Date()-new Date(p.dob))/31557600000)+' anos' : '—';
+    var tags = function(arr,cls){ return (arr||[]).map(function(v){ return '<span class="tag '+cls+'">'+xs(v)+'</span>'; }).join(''); };
+    var h = '<div class="ec" style="margin-top:14px">'+
+      (p.photo?'<img src="'+p.photo+'" style="width:60px;height:60px;border-radius:50%;object-fit:cover;float:left;margin-right:14px;border:2px solid #1D9E75" alt="">':'')+
+      '<div class="etit">Identificação</div>'+
+      '<div style="font-size:20px;font-weight:700;margin-bottom:3px">'+(p.first_name||'')+' '+(p.last_name||'')+'</div>'+
+      '<div style="font-size:13px;color:#6b7280;margin-bottom:12px;clear:both">'+age+(p.gender?' · '+xs(p.gender):'')+'</div>'+
+      '<div class="erow"><span class="elbl">CPF</span><span class="eval">'+(p.cpf||'—')+'</span></div>'+
+      '<div class="erow"><span class="elbl">Tipo sanguíneo</span><span class="eval"><span class="bbl">'+(p.blood||'—')+'</span></span></div>'+
+      (p.weight?'<div class="erow"><span class="elbl">Peso</span><span class="eval">'+xs(p.weight)+' kg</span></div>':'')+
+      (p.height?'<div class="erow"><span class="elbl">Altura</span><span class="eval">'+xs(p.height)+' cm</span></div>':'')+
+      '</div>';
+    if ((p.allergies&&p.allergies.length)||(p.conditions&&p.conditions.length)) {
+      h+='<div class="ec acard"><div class="etit">⚠ Alertas críticos</div>'+
+        (p.allergies&&p.allergies.length?'<div style="margin-bottom:10px"><div style="font-size:12px;color:#6b7280;margin-bottom:6px">Alergias</div><div class="trow">'+tags(p.allergies,'t-r')+'</div></div>':'')+
+        (p.conditions&&p.conditions.length?'<div><div style="font-size:12px;color:#6b7280;margin-bottom:6px">Condições</div><div class="trow">'+tags(p.conditions,'t-a')+'</div></div>':'')+
+        '</div>';
+    }
+    if (p.medications&&p.medications.length) { h+='<div class="ec"><div class="etit">Medicamentos</div><div class="trow">'+tags(p.medications,'t-b')+'</div></div>'; }
+    if ((p.disabilities&&p.disabilities.length)||p.dis_obs) {
+      h+='<div class="ec"><div class="etit">Necessidades especiais</div>'+
+        (p.disabilities&&p.disabilities.length?'<div class="trow" style="margin-bottom:8px">'+tags(p.disabilities,'t-g')+'</div>':'')+
+        (p.dis_obs?'<div style="font-size:13px">'+xs(p.dis_obs)+'</div>':'')+
+        '</div>';
+    }
+    if (p.surgeries) { h+='<div class="ec"><div class="etit">Cirurgias anteriores</div><div style="font-size:14px;line-height:1.7">'+xs(p.surgeries)+'</div></div>'; }
+    h+='<div class="ec"><div class="etit">Contato de emergência</div>'+
+      '<div class="erow"><span class="elbl">Nome</span><span class="eval">'+(p.ec_name||'—')+(p.ec_rel?' <span style="color:#9ca3af;font-size:12px">('+xs(p.ec_rel)+')</span>':'')+'</span></div>'+
+      '<div class="erow"><span class="elbl">Telefone</span><span class="eval">'+(p.ec_phone?'<a href="tel:'+xs(p.ec_phone)+'" style="color:#0F6E56;font-weight:600">'+xs(p.ec_phone)+'</a>':'—')+'</span></div>'+
+      '<div class="erow"><span class="elbl">Convênio</span><span class="eval">'+(p.insurance||'—')+(p.ins_num?' · '+xs(p.ins_num):'')+'</span></div>'+
+      '</div>'+
+      '<div style="text-align:center;font-size:11px;color:#9ca3af;margin-top:16px">Easy Care · LGPD · '+new Date(p.created_at).toLocaleDateString('pt-BR')+'</div>'+
+      '<div style="text-align:center;margin-top:12px"><button class="btn btn-w btn-sm" onclick="history.back()">← Voltar</button></div>';
+    document.getElementById('emgbody').innerHTML = h;
+  } catch(e) { document.getElementById('emgbody').innerHTML='<div style="text-align:center;padding:40px;color:#6b7280"><h3>Erro</h3><p>'+e.message+'</p></div>'; }
+}
+
+// MODALS
+function openM(id) { document.getElementById(id).classList.add('open'); }
+function closeM(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', function(e) { if(e.target.classList.contains('overlay')) e.target.classList.remove('open'); });
+
+// MASKS
+function maskCPF(el){var v=el.value.replace(/\D/g,'');if(v.length>3)v=v.slice(0,3)+'.'+v.slice(3);if(v.length>7)v=v.slice(0,7)+'.'+v.slice(7);if(v.length>11)v=v.slice(0,11)+'-'+v.slice(11);el.value=v.slice(0,14);}
+function maskPhone(el){var v=el.value.replace(/\D/g,'');if(v.length>0)v='('+v;if(v.length>3)v=v.slice(0,3)+') '+v.slice(3);if(v.length>10)v=v.slice(0,10)+'-'+v.slice(10);el.value=v.slice(0,15);}
+
+// TOAST
+function toast(msg, type) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (type ? ' t'+type : '');
+  setTimeout(function(){ el.classList.remove('show'); }, 3500);
+}
+
+// UTILS
+function xs(v) { return (v||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+function fd(d) { if(!d)return'—'; try{return new Date(d+'T12:00:00').toLocaleDateString('pt-BR');}catch(e){return d;} }
+function gv(id) { var el=document.getElementById(id); return el?el.value:''; }
+</script>
+</body>
+</html>
