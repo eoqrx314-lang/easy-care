@@ -288,12 +288,16 @@ tr:hover td{background:#fafafa}
         <button id="btn-edit-pat" class="btn btn-w btn-sm">✏️ Atualizar ficha</button>
       </div>
     </div>
-    <div id="pat-body"></div>
-    <div id="pat-cons" class="pc" style="display:none">
-      <div class="pt">Minhas consultas</div>
-      <div id="pat-cons-body"></div>
+    <!-- TAB 1: FICHA -->
+    <div id="pat-tab1">
+      <div id="pat-body"></div>
+      <p style="text-align:center;font-size:12px;color:#9ca3af;margin-top:8px;padding-bottom:16px">Easy Care · Dados protegidos por LGPD</p>
     </div>
-    <p style="text-align:center;font-size:12px;color:#9ca3af;margin-top:8px;padding-bottom:16px">Easy Care · Dados protegidos por LGPD</p>
+
+    <!-- TAB 2: CONSULTAS -->
+    <div id="pat-tab2" style="display:none;padding-bottom:32px">
+      <div id="pat-cons-list"><div class="ld"><span class="spin"></span>Carregando...</div></div>
+    </div>
   </div>
 </div>
 
