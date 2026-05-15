@@ -288,8 +288,6 @@ tr:hover td{background:#fafafa}
         <button id="btn-edit-pat" class="btn btn-w btn-sm">✏️ Atualizar ficha</button>
       </div>
     </div>
-    <!-- TAB 1: FICHA -->
-    <div id="pat-tab1">
       <div id="pat-body"></div>
       <p style="text-align:center;font-size:12px;color:#9ca3af;margin-top:8px;padding-bottom:16px">Easy Care · Dados protegidos por LGPD</p>
     </div>
@@ -528,14 +526,7 @@ function initButtons() {
   document.getElementById('btn-ver-pac').addEventListener('click', function() { goTab(1); });
   document.getElementById('btn-outro-cad').addEventListener('click', function() { initAdmForm(); });
   document.getElementById('sq').addEventListener('input', doSearch);
-  // Consultations
-  document.getElementById('btn-nova-cons').addEventListener('click', function() { openConsForm(null); });
-  document.getElementById('btn-save-cons').addEventListener('click', saveCons);
-  document.getElementById('csq').addEventListener('input', searchCons);
-  document.getElementById('cs-st').addEventListener('change', searchCons);
-  // Doctors
-  document.getElementById('btn-novo-med').addEventListener('click', openDoctorForm);
-  document.getElementById('btn-save-doc').addEventListener('click', saveDoctor);
+  // Consultations and Doctors tabs handled separately
   // Form
   document.getElementById('btn-form-back').addEventListener('click', function() { showPage('pg-home'); });
   document.getElementById('btn-print-pub').addEventListener('click', function() { printQR('qr-pub'); });
@@ -595,9 +586,17 @@ function goTab(n) {
   }
   if(n===1) loadList();
   if(n===2) initAdmForm();
-  if(n===3) loadCons();
-  if(n===4) loadDoctors();
 }
+
+// Stub functions for admin consultation tabs (to be implemented)
+function loadCons() {}
+function searchCons() {}
+function openConsForm(id) {}
+function saveCons() {}
+function viewCons(id) {}
+function loadDoctors() {}
+function openDoctorForm() {}
+function saveDoctor() {}
 
 // PATIENTS LIST
 var allPts=[];
@@ -910,465 +909,143 @@ function showPatCard(p, tok) {
   if(p.id) loadPatCons(p.id);
 }
 
-async function loadPatCons(patId) {
-  try {
-    var list=await dbGet('consultations','&patient_id=eq.'+patId);
-    if(!list.length) return;
-    var box=document.getElementById('pat-cons');
-    var body=document.getElementById('pat-cons-body');
-    box.style.display='block';
-    body.innerHTML=list.map(function(c) {
-      var dt=c.scheduled_at?new Date(c.scheduled_at).toLocaleDateString('pt-BR'):'—';
-      return '<div style="border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:10px">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'+
-        '<div style="font-size:14px;font-weight:600">'+xs(c.doctor_name||'Médico não informado')+'</div>'+
-        statusBadge(c.status)+'</div>'+
-        '<div style="font-size:13px;color:#6b7280;margin-bottom:6px">'+dt+(c.specialty?' · '+xs(c.specialty):'')+'</div>'+
-        (c.chief_complaint?'<div style="font-size:13px;margin-bottom:4px"><strong>Motivo:</strong> '+xs(c.chief_complaint)+'</div>':'')+
-        (c.diagnosis?'<div style="font-size:13px;margin-bottom:4px"><strong>Diagnóstico:</strong> '+xs(c.diagnosis)+'</div>':'')+
-        (c.treatment?'<div style="font-size:13px;margin-bottom:4px"><strong>Tratamento:</strong> '+xs(c.treatment)+'</div>':'')+
-        (c.return_date?'<div style="font-size:13px;color:#0F6E56"><strong>Retorno:</strong> '+xs(c.return_date)+'</div>':'')+
-        '</div>';
-    }).join('');
-  } catch(e) { console.log('pat cons error:', e.message); }
-}
-
-function shareLink() {
-  var url=BASE_URL+'/#e/'+pendingTok;
-  if(navigator.share) navigator.share({title:'Minha ficha Easy Care',url:url});
-  else navigator.clipboard.writeText(url).then(function(){ toast('Link copiado!','ok'); });
-}
-
-function showEditPat() {
-  if(!pendingData) return;
-  document.getElementById('pedit-body').innerHTML=
-    '<div class="f"><label>Alergias (vírgula)</label><textarea id="pe-alg" rows="2">'+xs((pendingData.allergies||[]).join(', '))+'</textarea></div>'+
-    '<div class="f"><label>Medicamentos (vírgula)</label><textarea id="pe-med" rows="2">'+xs((pendingData.medications||[]).join(', '))+'</textarea></div>'+
-    '<div class="f"><label>Condições (vírgula)</label><textarea id="pe-cond" rows="2">'+xs((pendingData.conditions||[]).join(', '))+'</textarea></div>'+
-    '<div class="f"><label>Cirurgias</label><textarea id="pe-sg" rows="2">'+xs(pendingData.surgeries||'')+'</textarea></div>'+
-    '<div class="g2"><div class="f"><label>Contato emerg.</label><input id="pe-en" value="'+xs(pendingData.ec_name||'')+'"></div>'+
-    '<div class="f"><label>Tel. emerg.</label><input id="pe-ep" value="'+xs(pendingData.ec_phone||'')+'"></div></div>'+
-    '<div class="g2"><div class="f"><label>Convênio</label><input id="pe-ins" value="'+xs(pendingData.insurance||'')+'"></div>'+
-    '<div class="f"><label>Nº convênio</label><input id="pe-inn" value="'+xs(pendingData.ins_num||'')+'"></div></div>'+
-    '<div class="g3"><div class="f"><label>Sangue</label><select id="pe-bl">'+
-    ['','A+','A-','B+','B-','AB+','AB-','O+','O-','Não sei'].map(function(v){return'<option'+(pendingData.blood===v?' selected':'')+'>'+v+'</option>';}).join('')+
-    '</select></div><div class="f"><label>Altura</label><input id="pe-ht" type="number" value="'+xs(pendingData.height||'')+'"></div>'+
-    '<div class="f"><label>Peso</label><input id="pe-wt" type="number" value="'+xs(pendingData.weight||'')+'"></div></div>';
-  openM('m-pedit');
-}
-
-async function savePatEdit() {
-  var btn=document.getElementById('btn-save-pedit');
-  btn.disabled=true; btn.textContent='Salvando...';
-  try {
-    var rows=await (await fetch(SB+'/rest/v1/patients?token=eq.'+encodeURIComponent(pendingTok)+'&limit=1',{headers:hdr()})).json();
-    if(!rows||!rows.length) throw new Error('Paciente não encontrado');
-    var updates={allergies:split(gv('pe-alg')),medications:split(gv('pe-med')),conditions:split(gv('pe-cond')),surgeries:gv('pe-sg'),ec_name:gv('pe-en'),ec_phone:gv('pe-ep'),insurance:gv('pe-ins'),ins_num:gv('pe-inn'),blood:gv('pe-bl'),height:gv('pe-ht'),weight:gv('pe-wt')};
-    await dbPatch('patients',rows[0].id,updates);
-    Object.assign(pendingData,updates);
-    closeM('m-pedit'); showPatCard(pendingData,pendingTok); toast('Ficha atualizada!','ok');
-  } catch(e) { toast('Erro: '+e.message,'ko'); btn.disabled=false; btn.textContent='Salvar'; }
-}
-
-// PATIENT LOGIN
-async function patLogin() {
-  var email=document.getElementById('pl-email').value.trim().toLowerCase();
-  var pass=document.getElementById('pl-pass').value;
-  var err=document.getElementById('pl-err'); err.style.display='none';
-  if(!email||!pass){err.textContent='Preencha e-mail e senha.';err.style.display='block';return;}
-  var btn=document.getElementById('btn-pat-login'); btn.disabled=true; btn.textContent='Buscando...';
-  try {
-    var r=await fetch(SB+'/rest/v1/patients?or=(login_email.ilike.'+encodeURIComponent(email)+',email.ilike.'+encodeURIComponent(email)+')&access_pass=eq.'+encodeURIComponent(pass)+'&limit=1',{headers:hdr()});
-    var rows=await r.json();
-    if(!rows||!rows.length){err.textContent='E-mail ou senha incorretos.';err.style.display='block';btn.disabled=false;btn.textContent='Acessar minha ficha';return;}
-    showPatCard(rows[0],rows[0].token);
-  } catch(e) {err.textContent='Erro: '+e.message;err.style.display='block';btn.disabled=false;btn.textContent='Acessar minha ficha';}
-}
-
-async function sendReset() {
-  var email=(document.getElementById('frgt-email').value||'').trim().toLowerCase();
-  var errEl=document.getElementById('frgt-err'), okEl=document.getElementById('frgt-ok');
-  errEl.style.display='none'; okEl.style.display='none';
-  if(!email){errEl.textContent='Digite seu e-mail.';errEl.style.display='block';return;}
-  var btn=document.getElementById('btn-send-reset'); btn.disabled=true; btn.textContent='Enviando...';
-  try {
-    var p=await dbFind('patients','or=(login_email.ilike.'+encodeURIComponent(email)+',email.ilike.'+encodeURIComponent(email)+')');
-    if(!p){errEl.textContent='E-mail não encontrado.';errEl.style.display='block';btn.disabled=false;btn.textContent='Enviar link';return;}
-    var tok='rst'+Math.random().toString(36).slice(2)+Date.now().toString(36);
-    await dbPatch('patients',p.id,{reset_token:tok,reset_expires:new Date(Date.now()+3600000).toISOString()});
-    await sendEmail('reset',email,((p.first_name||'')+' '+(p.last_name||'')).trim(),'',tok);
-    okEl.style.display='block';
-  } catch(e) {errEl.textContent='Erro: '+e.message;errEl.style.display='block';}
-  btn.disabled=false; btn.textContent='Enviar link';
-}
-
-var resetTok=null;
-function loadReset(tok) { resetTok=tok; showPage('pg-reset'); }
-async function doReset() {
-  var pass=gv('rst-pass'), pass2=gv('rst-pass2');
-  var err=document.getElementById('rst-err'); err.style.display='none';
-  if(!pass||pass.length<6){err.textContent='Mínimo 6 caracteres.';err.style.display='block';return;}
-  if(pass!==pass2){err.textContent='As senhas não coincidem.';err.style.display='block';return;}
-  var btn=document.getElementById('btn-do-reset'); btn.disabled=true; btn.textContent='Salvando...';
-  try {
-    var now=new Date().toISOString();
-    var p=await dbFind('patients','reset_token=eq.'+encodeURIComponent(resetTok)+'&reset_expires=gte.'+encodeURIComponent(now));
-    if(!p){err.textContent='Link inválido ou expirado.';err.style.display='block';btn.disabled=false;btn.textContent='Salvar nova senha';return;}
-    await dbPatch('patients',p.id,{access_pass:pass,reset_token:null,reset_expires:null});
-    toast('Senha redefinida!','ok');
-    setTimeout(function(){showPage('pg-plogin');},1500);
-  } catch(e) {err.textContent='Erro: '+e.message;err.style.display='block';btn.disabled=false;btn.textContent='Salvar nova senha';}
-}
-
-// CONSULTATIONS
-var allCons=[];
-async function loadCons() {
-  document.getElementById('cld').style.display='block';
-  document.getElementById('cem').style.display='none';
-  document.getElementById('ctbody').innerHTML='';
-  try { allCons=await dbGet('consultations','&select=*,patients(first_name,last_name)'); renderCons(allCons); }
-  catch(e) { toast('Erro: '+e.message,'ko'); }
-  document.getElementById('cld').style.display='none';
-}
-function searchCons() {
-  var q=(document.getElementById('csq').value||'').toLowerCase();
-  var st=document.getElementById('cs-st').value;
-  renderCons(allCons.filter(function(c){
-    var nm=((c.patients&&c.patients.first_name||'')+' '+(c.patients&&c.patients.last_name||'')).toLowerCase();
-    return(!q||nm.indexOf(q)>=0||(c.doctor_name||'').toLowerCase().indexOf(q)>=0)&&(!st||c.status===st);
-  }));
-}
-function statusBadge(s) {
-  var map={agendada:'background:#EFF6FF;color:#1e40af',realizada:'background:#E1F5EE;color:#0F6E56',cancelada:'background:#FCEBEB;color:#A32D2D'};
-  return '<span class="sbadge" style="'+(map[s]||'background:#f3f4f6;color:#6b7280')+'">'+xs(s||'—')+'</span>';
-}
-function renderCons(list) {
-  if(!list.length){document.getElementById('ctbody').innerHTML='';document.getElementById('cem').style.display='block';return;}
-  document.getElementById('cem').style.display='none';
-  document.getElementById('ctbody').innerHTML=list.map(function(c){
-    var pn=c.patients?xs(c.patients.first_name)+' '+xs(c.patients.last_name):'—';
-    var dt=c.scheduled_at?new Date(c.scheduled_at).toLocaleDateString('pt-BR'):'—';
-    return '<tr><td><strong>'+pn+'</strong></td><td style="color:#6b7280">'+xs(c.doctor_name||'—')+'</td>'+
-      '<td style="color:#6b7280">'+dt+'</td><td>'+statusBadge(c.status)+'</td>'+
-      '<td style="color:#6b7280;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+xs(c.chief_complaint||'—')+'</td>'+
-      '<td><div style="display:flex;gap:5px">'+
-        '<button class="ibtn" data-cid="'+c.id+'" data-cact="view">👁</button>'+
-        '<button class="ibtn" data-cid="'+c.id+'" data-cact="edit">✏️</button>'+
-        '<button class="ibtn" data-cid="'+c.id+'" data-cact="del">🗑️</button>'+
-      '</div></td></tr>';
-  }).join('');
-  document.getElementById('ctbody').querySelectorAll('.ibtn').forEach(function(btn){
-    btn.addEventListener('click',function(){
-      var id=this.dataset.cid, act=this.dataset.cact;
-      if(act==='view') viewCons(id);
-      else if(act==='edit') openConsForm(id);
-      else if(act==='del') {if(confirm('Excluir consulta?')) dbDel('consultations',id).then(loadCons).catch(function(e){toast('Erro: '+e.message,'ko');});}
-    });
-  });
-}
-
-async function openConsForm(editId) {
-  var c=editId?allCons.find(function(x){return x.id===editId;}):null;
-  var patients=await dbGet('patients','&select=id,first_name,last_name');
-  var doctors=await dbGet('doctors','');
-  window._docList=doctors;
-  var pOpts=patients.map(function(p){return'<option value="'+p.id+'"'+(c&&c.patient_id===p.id?' selected':'')+'>'+xs(p.first_name)+' '+xs(p.last_name)+'</option>';}).join('');
-  var dOpts='<option value="">Selecione...</option>'+doctors.map(function(d){return'<option value="'+d.id+'"'+(c&&c.doctor_id===d.id?' selected':'')+'>'+xs(d.name)+(d.crm?' ('+d.crm+')':'')+'</option>';}).join('');
-  document.getElementById('m-cons-t').textContent=editId?'Editar consulta':'Nova consulta';
-  document.getElementById('m-cons-b').innerHTML=
-    '<input type="hidden" id="cons-edit-id" value="'+(editId||'')+'">'+
-    '<div class="g2"><div class="f"><label>Paciente <span class="req">*</span></label><select id="cf-pat"><option value="">Selecione...</option>'+pOpts+'</select></div>'+
-    '<div class="f"><label>Médico</label><select id="cf-doc">'+dOpts+'</select></div></div>'+
-    '<div class="g2"><div class="f"><label>Nome do médico</label><input id="cf-dn" value="'+xs(c&&c.doctor_name||'')+'" placeholder="Dr. João Silva"></div>'+
-    '<div class="f"><label>CRM</label><input id="cf-dc" value="'+xs(c&&c.doctor_crm||'')+'" placeholder="CRM 123456"></div></div>'+
-    '<div class="g2"><div class="f"><label>Especialidade</label><input id="cf-sp" value="'+xs(c&&c.specialty||'')+'" placeholder="Clínica Geral"></div>'+
-    '<div class="f"><label>Status</label><select id="cf-st"><option value="agendada"'+(!c||c.status==='agendada'?' selected':'')+'>Agendada</option><option value="realizada"'+(c&&c.status==='realizada'?' selected':'')+'>Realizada</option><option value="cancelada"'+(c&&c.status==='cancelada'?' selected':'')+'>Cancelada</option></select></div></div>'+
-    '<div class="g2"><div class="f"><label>Data da consulta</label><input type="datetime-local" id="cf-dt" value="'+(c&&c.scheduled_at?c.scheduled_at.slice(0,16):'')+'"></div>'+
-    '<div class="f"><label>Data de retorno</label><input id="cf-ret" value="'+xs(c&&c.return_date||'')+'" placeholder="Ex: 30/06/2025"></div></div>'+
-    '<div class="f"><label>Queixa principal</label><textarea id="cf-cc" rows="2" placeholder="Motivo da consulta...">'+xs(c&&c.chief_complaint||'')+'</textarea></div>'+
-    '<div class="f"><label>Observações clínicas</label><textarea id="cf-ob" rows="3" placeholder="Anamnese, exame físico...">'+xs(c&&c.observations||'')+'</textarea></div>'+
-    '<div class="f"><label>Diagnóstico</label><textarea id="cf-dg" rows="2" placeholder="CID, hipótese diagnóstica...">'+xs(c&&c.diagnosis||'')+'</textarea></div>'+
-    '<div class="f"><label>Conduta</label><textarea id="cf-cd" rows="2" placeholder="Exames, encaminhamentos...">'+xs(c&&c.conduct||'')+'</textarea></div>'+
-    '<div class="f"><label>Tratamento / Prescrição</label><textarea id="cf-tr" rows="3" placeholder="Medicamentos, dosagem...">'+xs(c&&c.treatment||'')+'</textarea></div>'+
-    '<div class="f"><label>Observações adicionais</label><textarea id="cf-nt" rows="2" placeholder="Outras informações...">'+xs(c&&c.notes||'')+'</textarea></div>';
-  // Auto-fill doctor fields on change
-  document.getElementById('cf-doc').addEventListener('change',function(){
-    var d=window._docList&&window._docList.find(function(x){return x.id===this.value;}.bind(this));
-    if(d){document.getElementById('cf-dn').value=d.name||'';document.getElementById('cf-dc').value=d.crm||'';document.getElementById('cf-sp').value=d.specialty||'';}
-  });
-  openM('m-cons');
-}
-
-async function saveCons() {
-  var editId=gv('cons-edit-id');
-  var patId=gv('cf-pat');
-  if(!patId){toast('Selecione um paciente','ko');return;}
-  var btn=document.getElementById('btn-save-cons'); btn.disabled=true; btn.textContent='Salvando...';
-  var data={patient_id:patId,doctor_id:gv('cf-doc')||null,doctor_name:gv('cf-dn'),doctor_crm:gv('cf-dc'),specialty:gv('cf-sp'),status:gv('cf-st'),scheduled_at:gv('cf-dt')||null,return_date:gv('cf-ret'),chief_complaint:gv('cf-cc'),observations:gv('cf-ob'),diagnosis:gv('cf-dg'),conduct:gv('cf-cd'),treatment:gv('cf-tr'),notes:gv('cf-nt')};
-  try {
-    if(editId) await dbPatch('consultations',editId,data);
-    else await dbPost('consultations',data);
-    closeM('m-cons'); await loadCons(); toast(editId?'Consulta atualizada!':'Consulta salva!','ok');
-  } catch(e) {toast('Erro: '+e.message,'ko'); btn.disabled=false; btn.textContent='Salvar';}
-}
-
-function viewCons(id) {
-  var c=allCons.find(function(x){return x.id===id;});
-  if(!c) return;
-  var pn=c.patients?xs(c.patients.first_name)+' '+xs(c.patients.last_name):'—';
-  var dt=c.scheduled_at?new Date(c.scheduled_at).toLocaleDateString('pt-BR')+' às '+new Date(c.scheduled_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';
-  function row(l,v){return v?'<div class="erow"><span class="elbl">'+l+'</span><span class="eval" style="text-align:left;max-width:70%">'+xs(v)+'</span></div>':'';}
-  function blk(l,v){return v?'<div style="margin-bottom:14px"><div style="font-size:12px;color:#6b7280;margin-bottom:4px;font-weight:500">'+l+'</div><div style="font-size:14px;line-height:1.7;white-space:pre-wrap">'+xs(v)+'</div></div>':'';}
-  document.getElementById('m-cons-view-b').innerHTML=
-    '<div style="margin-bottom:16px">'+statusBadge(c.status)+'</div>'+
-    '<div class="ec" style="margin-bottom:12px">'+row('Paciente',pn)+row('Médico',c.doctor_name)+row('CRM',c.doctor_crm)+row('Especialidade',c.specialty)+row('Data',dt)+row('Retorno',c.return_date)+'</div>'+
-    blk('Queixa principal',c.chief_complaint)+blk('Observações',c.observations)+blk('Diagnóstico',c.diagnosis)+blk('Conduta',c.conduct)+blk('Tratamento',c.treatment)+blk('Notas',c.notes);
-  openM('m-cons-view');
-}
-
-// DOCTORS
-var allDocs=[];
-async function loadDoctors() {
-  document.getElementById('dld').style.display='block';
-  document.getElementById('dem').style.display='none';
-  document.getElementById('dtbody').innerHTML='';
-  try { allDocs=await dbGet('doctors',''); renderDocs(allDocs); } catch(e) { toast('Erro: '+e.message,'ko'); }
-  document.getElementById('dld').style.display='none';
-}
-function renderDocs(list) {
-  if(!list.length){document.getElementById('dtbody').innerHTML='';document.getElementById('dem').style.display='block';return;}
-  document.getElementById('dem').style.display='none';
-  document.getElementById('dtbody').innerHTML=list.map(function(d){
-    return '<tr><td><strong>'+xs(d.name)+'</strong></td><td style="color:#6b7280">'+xs(d.crm||'—')+'</td>'+
-      '<td style="color:#6b7280">'+xs(d.specialty||'—')+'</td><td style="color:#6b7280">'+xs(d.login_email||d.email||'—')+'</td>'+
-      '<td><button class="ibtn" data-did="'+d.id+'" data-dname="'+xs(d.name)+'">🗑️</button></td></tr>';
-  }).join('');
-  document.getElementById('dtbody').querySelectorAll('.ibtn').forEach(function(btn){
-    btn.addEventListener('click',function(){
-      var id=this.dataset.did, name=this.dataset.dname;
-      if(confirm('Excluir Dr(a). '+name+'?')) dbDel('doctors',id).then(loadDoctors).catch(function(e){toast('Erro: '+e.message,'ko');});
-    });
-  });
-}
-function openDoctorForm() {
-  document.getElementById('m-doctor-b').innerHTML=
-    '<div class="g2"><div class="f"><label>Nome completo <span class="req">*</span></label><input id="df-n" placeholder="Dr. João Silva"></div>'+
-    '<div class="f"><label>CRM</label><input id="df-c" placeholder="CRM 123456/SP"></div></div>'+
-    '<div class="g2"><div class="f"><label>Especialidade</label><input id="df-s" placeholder="Clínica Geral"></div>'+
-    '<div class="f"><label>Telefone</label><input id="df-p" placeholder="(11) 99999-9999"></div></div>'+
-    '<div style="background:#E1F5EE;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#085041">Preencha abaixo para que o médico acesse o portal.</div>'+
-    '<div class="f"><label>E-mail de acesso</label><input type="email" id="df-e" placeholder="medico@email.com"></div>'+
-    '<div class="g2"><div class="f"><label>Senha</label><input type="password" id="df-pw" placeholder="Mínimo 6 caracteres"></div>'+
-    '<div class="f"><label>Confirmar</label><input type="password" id="df-pw2" placeholder="Repita a senha"></div></div>';
-  openM('m-doctor');
-}
-async function saveDoctor() {
-  var name=gv('df-n');
-  if(!name){toast('Nome obrigatório','ko');return;}
-  var pass=gv('df-pw'), pass2=gv('df-pw2');
-  if(pass&&pass.length<6){toast('Senha deve ter no mínimo 6 caracteres','ko');return;}
-  if(pass!==pass2){toast('As senhas não coincidem','ko');return;}
-  var btn=document.getElementById('btn-save-doc'); btn.disabled=true; btn.textContent='Salvando...';
-  try {
-    await dbPost('doctors',{name:name,crm:gv('df-c'),specialty:gv('df-s'),phone:gv('df-p'),login_email:gv('df-e')||null,access_pass:pass||null});
-    closeM('m-doctor'); await loadDoctors(); toast('Médico cadastrado!','ok');
-  } catch(e) {toast('Erro: '+e.message,'ko'); btn.disabled=false; btn.textContent='Salvar';}
-}
-
-// DOCTOR PORTAL
-var currentDoctor=null;
-async function doDoctorLogin() {
-  var email=document.getElementById('dl-email').value.trim().toLowerCase();
-  var pass=document.getElementById('dl-pass').value;
-  var err=document.getElementById('dl-err'); err.style.display='none';
-  if(!email||!pass){err.textContent='Preencha e-mail e senha.';err.style.display='block';return;}
-  var btn=document.getElementById('btn-doc-login'); btn.disabled=true; btn.textContent='Entrando...';
-  try {
-    var doc=await dbFind('doctors','login_email=ilike.'+encodeURIComponent(email)+'&access_pass=eq.'+encodeURIComponent(pass));
-    if(!doc){err.textContent='E-mail ou senha incorretos.';err.style.display='block';btn.disabled=false;btn.textContent='Entrar';return;}
-    currentDoctor=doc;
-    document.getElementById('doc-name-top').textContent=doc.name;
-    showPage('pg-doctor');
-    document.getElementById('pg-doctor').style.display='flex';
-    goDTab(1);
-  } catch(e) {err.textContent='Erro: '+e.message;err.style.display='block';btn.disabled=false;btn.textContent='Entrar';}
-}
-function goDTab(n) {
-  document.getElementById('dtab1').style.display=n===1?'block':'none';
-  document.getElementById('dtab2').style.display=n===2?'block':'none';
-  document.getElementById('dnb1').classList.toggle('on',n===1);
-  document.getElementById('dnb2').classList.toggle('on',n===2);
-  if(n===1) loadDocCons();
-  if(n===2) buildDocConsForm();
-}
-async function loadDocCons() {
-  if(!currentDoctor) return;
-  document.getElementById('dcld').style.display='block';
-  document.getElementById('dcem').style.display='none';
-  document.getElementById('dctbody').innerHTML='';
-  try {
-    var list=await dbGet('consultations','&doctor_id=eq.'+currentDoctor.id+'&select=*,patients(first_name,last_name)');
-    if(!list.length){document.getElementById('dcem').style.display='block';}
-    else {
-      document.getElementById('dctbody').innerHTML=list.map(function(c){
-        var pn=c.patients?xs(c.patients.first_name)+' '+xs(c.patients.last_name):'—';
-        var dt=c.scheduled_at?new Date(c.scheduled_at).toLocaleDateString('pt-BR'):'—';
-        return '<tr><td><strong>'+pn+'</strong></td><td style="color:#6b7280">'+dt+'</td>'+
-          '<td>'+statusBadge(c.status)+'</td><td style="color:#6b7280">'+xs(c.chief_complaint||'—')+'</td>'+
-          '<td><button class="ibtn" data-dcid="'+c.id+'">✏️</button></td></tr>';
-      }).join('');
-      document.getElementById('dctbody').querySelectorAll('.ibtn').forEach(function(btn){
-        btn.addEventListener('click',function(){ editDocCons(this.dataset.dcid); });
-      });
-    }
-  } catch(e) {toast('Erro: '+e.message,'ko');}
-  document.getElementById('dcld').style.display='none';
-}
-async function buildDocConsForm(prefill) {
-  var patients=await dbGet('patients','&select=id,first_name,last_name');
-  var pOpts=patients.map(function(p){return'<option value="'+p.id+'"'+(prefill&&prefill.patient_id===p.id?' selected':'')+'>'+xs(p.first_name)+' '+xs(p.last_name)+'</option>';}).join('');
-  var editId=prefill?prefill.id:'';
-  document.getElementById('doc-cons-form').innerHTML=
-    '<div class="card"><div class="sh"><div class="si ig">📋</div><div><h3>'+(editId?'Editar':'Registrar')+' consulta</h3></div></div>'+
-    '<input type="hidden" id="dcc-id" value="'+editId+'">'+
-    '<div class="f"><label>Paciente <span class="req">*</span></label><select id="dcc-pat"><option value="">Selecione...</option>'+pOpts+'</select></div>'+
-    '<div class="g2"><div class="f"><label>Status</label><select id="dcc-st"><option value="agendada"'+((!prefill||prefill.status==='agendada')?' selected':'')+'>Agendada</option><option value="realizada"'+(prefill&&prefill.status==='realizada'?' selected':'')+'>Realizada</option><option value="cancelada"'+(prefill&&prefill.status==='cancelada'?' selected':'')+'>Cancelada</option></select></div>'+
-    '<div class="f"><label>Data</label><input type="datetime-local" id="dcc-dt" value="'+(prefill&&prefill.scheduled_at?prefill.scheduled_at.slice(0,16):'')+'"></div></div>'+
-    '<div class="f"><label>Data de retorno</label><input id="dcc-ret" value="'+xs(prefill&&prefill.return_date||'')+'" placeholder="Ex: 30/06/2025"></div>'+
-    '<div class="f"><label>Queixa principal</label><textarea id="dcc-cc" rows="2" placeholder="Motivo...">'+xs(prefill&&prefill.chief_complaint||'')+'</textarea></div>'+
-    '<div class="f"><label>Observações clínicas</label><textarea id="dcc-ob" rows="3" placeholder="Anamnese, exame físico...">'+xs(prefill&&prefill.observations||'')+'</textarea></div>'+
-    '<div class="f"><label>Diagnóstico</label><textarea id="dcc-dg" rows="2" placeholder="CID...">'+xs(prefill&&prefill.diagnosis||'')+'</textarea></div>'+
-    '<div class="f"><label>Conduta</label><textarea id="dcc-cd" rows="2" placeholder="Exames, encaminhamentos...">'+xs(prefill&&prefill.conduct||'')+'</textarea></div>'+
-    '<div class="f"><label>Tratamento / Prescrição</label><textarea id="dcc-tr" rows="3" placeholder="Medicamentos, dosagem...">'+xs(prefill&&prefill.treatment||'')+'</textarea></div>'+
-    '<div class="f"><label>Observações adicionais</label><textarea id="dcc-nt" rows="2">'+xs(prefill&&prefill.notes||'')+'</textarea></div>'+
-    '<div style="display:flex;gap:10px;padding-bottom:16px"><button id="dcc-save" class="btn btn-g">'+(editId?'Atualizar':'Salvar')+' consulta</button><button id="dcc-clear" class="btn btn-w">Limpar</button></div></div>';
-  document.getElementById('dcc-save').addEventListener('click',saveDocCons);
-  document.getElementById('dcc-clear').addEventListener('click',function(){buildDocConsForm();});
-}
-async function editDocCons(id) {
-  goDTab(2);
-  var list=await dbGet('consultations','&id=eq.'+id);
-  if(list&&list[0]) buildDocConsForm(list[0]);
-}
-async function saveDocCons() {
-  var editId=gv('dcc-id'), patId=gv('dcc-pat');
-  if(!patId){toast('Selecione um paciente','ko');return;}
-  var btn=document.getElementById('dcc-save'); btn.disabled=true; btn.textContent='Salvando...';
-  var data={patient_id:patId,doctor_id:currentDoctor?currentDoctor.id:null,doctor_name:currentDoctor?currentDoctor.name:'',doctor_crm:currentDoctor?currentDoctor.crm:'',specialty:currentDoctor?currentDoctor.specialty:'',status:gv('dcc-st'),scheduled_at:gv('dcc-dt')||null,return_date:gv('dcc-ret'),chief_complaint:gv('dcc-cc'),observations:gv('dcc-ob'),diagnosis:gv('dcc-dg'),conduct:gv('dcc-cd'),treatment:gv('dcc-tr'),notes:gv('dcc-nt')};
-  try {
-    if(editId) await dbPatch('consultations',editId,data);
-    else await dbPost('consultations',data);
-    toast('Consulta salva!','ok'); goDTab(1);
-  } catch(e) {toast('Erro: '+e.message,'ko'); btn.disabled=false; btn.textContent='Salvar consulta';}
-}
-
-// EMERGENCY
-async function loadEmg(tok) {
-  showPage('pg-emg');
-  document.getElementById('emgbody').innerHTML='<div class="ld"><span class="spin"></span>Carregando...</div>';
-  try {
-    var p=await dbFind('patients','token=eq.'+encodeURIComponent(tok));
-    if(!p){document.getElementById('emgbody').innerHTML='<div style="text-align:center;padding:40px;color:#6b7280"><h3>QR Code inválido</h3></div>';return;}
-    var age=p.dob?Math.floor((new Date()-new Date(p.dob))/31557600000)+' anos':'—';
-    var tags=function(arr,cls){return(arr||[]).map(function(v){return'<span class="tag '+cls+'">'+xs(v)+'</span>';}).join('');};
-    var h='<div class="ec" style="margin-top:14px">'+
-      (p.photo?'<img src="'+p.photo+'" style="width:60px;height:60px;border-radius:50%;object-fit:cover;float:left;margin-right:14px;border:2px solid #1D9E75" alt="">':'')+
-      '<div class="etit">Identificação</div>'+
-      '<div style="font-size:20px;font-weight:700;margin-bottom:3px">'+(p.first_name||'')+' '+(p.last_name||'')+'</div>'+
-      '<div style="font-size:13px;color:#6b7280;margin-bottom:12px;clear:both">'+age+(p.gender?' · '+xs(p.gender):'')+'</div>'+
-      '<div class="erow"><span class="elbl">CPF</span><span class="eval">'+(p.cpf||'—')+'</span></div>'+
-      '<div class="erow"><span class="elbl">Tipo sanguíneo</span><span class="eval"><span class="bbl">'+(p.blood||'—')+'</span></span></div>'+
-      (p.weight?'<div class="erow"><span class="elbl">Peso</span><span class="eval">'+xs(p.weight)+' kg</span></div>':'')+
-      (p.height?'<div class="erow"><span class="elbl">Altura</span><span class="eval">'+xs(p.height)+' cm</span></div>':'')+
-      '</div>';
-    if((p.allergies&&p.allergies.length)||(p.conditions&&p.conditions.length)) {
-      h+='<div class="ec acard"><div class="etit">⚠ Alertas críticos</div>'+
-        (p.allergies&&p.allergies.length?'<div style="margin-bottom:10px"><div style="font-size:12px;color:#6b7280;margin-bottom:6px">Alergias</div><div class="trow">'+tags(p.allergies,'t-r')+'</div></div>':'')+
-        (p.conditions&&p.conditions.length?'<div><div style="font-size:12px;color:#6b7280;margin-bottom:6px">Condições</div><div class="trow">'+tags(p.conditions,'t-a')+'</div></div>':'')+
-        '</div>';
-    }
-    if(p.medications&&p.medications.length) h+='<div class="ec"><div class="etit">Medicamentos</div><div class="trow">'+tags(p.medications,'t-b')+'</div></div>';
-    if((p.disabilities&&p.disabilities.length)||p.dis_obs) {
-      h+='<div class="ec"><div class="etit">Necessidades especiais</div>'+
-        (p.disabilities&&p.disabilities.length?'<div class="trow" style="margin-bottom:8px">'+tags(p.disabilities,'t-g')+'</div>':'')+
-        (p.dis_obs?'<div style="font-size:13px">'+xs(p.dis_obs)+'</div>':'')+
-        '</div>';
-    }
-    if(p.surgeries) h+='<div class="ec"><div class="etit">Cirurgias</div><div style="font-size:14px;line-height:1.7">'+xs(p.surgeries)+'</div></div>';
-    h+='<div class="ec"><div class="etit">Contato de emergência</div>'+
-      '<div class="erow"><span class="elbl">Nome</span><span class="eval">'+(p.ec_name||'—')+(p.ec_rel?' <span style="color:#9ca3af;font-size:12px">('+xs(p.ec_rel)+')</span>':'')+'</span></div>'+
-      '<div class="erow"><span class="elbl">Telefone</span><span class="eval">'+(p.ec_phone?'<a href="tel:'+xs(p.ec_phone)+'" style="color:#0F6E56;font-weight:600">'+xs(p.ec_phone)+'</a>':'—')+'</span></div>'+
-      '<div class="erow"><span class="elbl">Convênio</span><span class="eval">'+(p.insurance||'—')+(p.ins_num?' · '+xs(p.ins_num):'')+'</span></div>'+
-      '</div>'+
-      '<div style="text-align:center;font-size:11px;color:#9ca3af;margin-top:16px">Easy Care · LGPD</div>'+
-      '<div style="text-align:center;margin-top:12px"><button class="btn btn-w btn-sm" onclick="history.back()">← Voltar</button></div>';
-    document.getElementById('emgbody').innerHTML=h;
-  } catch(e) {document.getElementById('emgbody').innerHTML='<div style="text-align:center;padding:40px;color:#6b7280"><h3>Erro</h3><p>'+e.message+'</p></div>';}
-}
-
-// PATIENT TABS
-function goPatTab(n) {
-  document.getElementById('pat-tab1').style.display = n===1 ? 'block' : 'none';
-  document.getElementById('pat-tab2').style.display = n===2 ? 'block' : 'none';
-  document.getElementById('pat-nb1').classList.toggle('on', n===1);
-  document.getElementById('pat-nb2').classList.toggle('on', n===2);
-  if (n===2) loadPatCons();
-}
-
-var currentConsId = null;
-
 async function loadPatCons() {
-  if (!pendingData || !pendingData.id) {
-    document.getElementById('pat-cons-list').innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280"><p>Nenhuma consulta registrada ainda.</p></div>';
-    return;
-  }
   document.getElementById('pat-cons-list').innerHTML = '<div class="ld"><span class="spin"></span>Carregando...</div>';
   try {
-    var r = await fetch(SB+'/rest/v1/consultations?patient_id=eq.'+pendingData.id+'&order=created_at.desc', {headers:hdr()});
-    if (!r.ok) throw new Error(await r.text());
-    var list = await r.json();
+    var list = [];
+    if (pendingData && pendingData.id) {
+      var r = await fetch(SB+'/rest/v1/consultations?patient_id=eq.'+pendingData.id+'&order=created_at.desc', {headers:hdr()});
+      if (!r.ok) throw new Error(await r.text());
+      list = await r.json();
+    }
+    // Always show header with button to add new consultation
+    var header = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'+
+      '<h2 style="font-size:18px;font-weight:700">Minhas consultas</h2>'+
+      '<button class="btn btn-g btn-sm" onclick="openNewPatCons()">+ Nova consulta</button>'+
+      '</div>';
     if (!list.length) {
-      document.getElementById('pat-cons-list').innerHTML = 
-        '<div style="text-align:center;padding:60px 20px">'+
+      document.getElementById('pat-cons-list').innerHTML = header +
+        '<div style="text-align:center;padding:40px 20px;background:#fff;border-radius:14px;border:1px solid #e5e7eb">'+
         '<div style="font-size:40px;margin-bottom:12px">🩺</div>'+
-        '<h3 style="font-size:16px;font-weight:600;margin-bottom:6px">Nenhuma consulta registrada</h3>'+
-        '<p style="font-size:14px;color:#6b7280">Suas consultas aparecerão aqui após serem registradas pelo médico.</p>'+
+        '<h3 style="font-size:16px;font-weight:600;margin-bottom:6px">Nenhuma consulta ainda</h3>'+
+        '<p style="font-size:14px;color:#6b7280;margin-bottom:16px">Registre sua primeira consulta.</p>'+
+        '<button class="btn btn-g" onclick="openNewPatCons()">+ Adicionar consulta</button>'+
         '</div>';
       return;
     }
-    var stMap = {agendada:'background:#EFF6FF;color:#1e40af', realizada:'background:#E1F5EE;color:#0F6E56', cancelada:'background:#FCEBEB;color:#A32D2D'};
-    var starHtml = function(rating) {
-      var s = '';
-      for (var i=1;i<=5;i++) s += '<span style="color:'+(i<=rating?'#F59E0B':'#d1d5db');s+=';font-size:18px">★</span>';
-      return s;
-    };
-    var html = list.map(function(c) {
-      var dt = c.scheduled_at ? new Date(c.scheduled_at).toLocaleDateString('pt-BR') : new Date(c.created_at).toLocaleDateString('pt-BR');
-      var stStyle = stMap[c.status] || 'background:#f3f4f6;color:#6b7280';
-      var rating = c.patient_rating || 0;
-      return '<div class="pc" style="margin-bottom:14px">'+
-        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">'+
-        '<div>'+
-          '<div style="font-size:15px;font-weight:600">'+xs(c.doctor_name||'Médico não informado')+'</div>'+
-          '<div style="font-size:12px;color:#6b7280;margin-top:2px">'+dt+(c.specialty?' · '+xs(c.specialty):'')+'</div>'+
-        '</div>'+
-        '<span style="'+stStyle+';padding:2px 10px;border-radius:99px;font-size:12px;font-weight:500">'+xs(c.status||'—')+'</span>'+
-        '</div>'+
-        (c.chief_complaint?'<div style="margin-bottom:8px"><span style="font-size:12px;color:#6b7280;font-weight:500">QUEIXA</span><div style="font-size:14px;margin-top:3px">'+xs(c.chief_complaint)+'</div></div>':'')+
-        (c.diagnosis?'<div style="margin-bottom:8px"><span style="font-size:12px;color:#6b7280;font-weight:500">DIAGNÓSTICO</span><div style="font-size:14px;margin-top:3px">'+xs(c.diagnosis)+'</div></div>':'')+
-        (c.treatment?'<div style="margin-bottom:8px"><span style="font-size:12px;color:#6b7280;font-weight:500">TRATAMENTO</span><div style="font-size:14px;margin-top:3px">'+xs(c.treatment)+'</div></div>':'')+
-        (c.return_date?'<div style="margin-bottom:10px;background:#E1F5EE;border-radius:8px;padding:8px 12px;font-size:13px;color:#085041">📅 Retorno: <strong>'+xs(c.return_date)+'</strong></div>':'')+
-        (rating?'<div style="margin-bottom:8px">'+starHtml(rating)+'</div>':'')+
-        (c.patient_comment?'<div style="background:#f9fafb;border-radius:8px;padding:10px 12px;font-size:13px;color:#6b7280;margin-bottom:10px;font-style:italic">"'+xs(c.patient_comment)+'"</div>':'')+
-        '<button class="btn btn-w btn-sm" data-cid="'+c.id+'" data-cdt="'+dt+'" data-cdoc="'+xs(c.doctor_name||'')+'" data-crating="'+rating+'" data-ccomment="'+xs(c.patient_comment||'')+'" onclick="openReview(this)">'+
-          (rating ? '✏️ Editar avaliação' : '⭐ Avaliar consulta')+
-        '</button>'+
-        '</div>';
-    }).join('');
-    document.getElementById('pat-cons-list').innerHTML = html;
+    document.getElementById('pat-cons-list').innerHTML = header + renderConsList(list);
+    return;
   } catch(e) {
     document.getElementById('pat-cons-list').innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280"><p>Erro: '+e.message+'</p></div>';
   }
+}
+function renderConsList(list) {
+  var stMap = {agendada:'background:#EFF6FF;color:#1e40af', realizada:'background:#E1F5EE;color:#0F6E56', cancelada:'background:#FCEBEB;color:#A32D2D'};
+  var starHtml = function(rating) {
+    var s = '';
+    for (var i=1;i<=5;i++) s += '<span style="color:'+(i<=rating?'#F59E0B':'#d1d5db')+';font-size:18px">★</span>';
+    return s;
+  };
+  return list.map(function(c) {
+    var dt = c.scheduled_at ? new Date(c.scheduled_at).toLocaleDateString('pt-BR') : new Date(c.created_at).toLocaleDateString('pt-BR');
+    var stStyle = stMap[c.status] || 'background:#f3f4f6;color:#6b7280';
+    var rating = c.patient_rating || 0;
+    return '<div class="pc" style="margin-bottom:14px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">'+
+      '<div>'+
+        '<div style="font-size:15px;font-weight:600">'+xs(c.doctor_name||'Médico não informado')+'</div>'+
+        '<div style="font-size:12px;color:#6b7280;margin-top:2px">'+dt+(c.specialty?' · '+xs(c.specialty):'')+'</div>'+
+      '</div>'+
+      '<span style="'+stStyle+';padding:2px 10px;border-radius:99px;font-size:12px;font-weight:500">'+xs(c.status||'—')+'</span>'+
+      '</div>'+
+      (c.chief_complaint?'<div style="margin-bottom:8px"><span style="font-size:12px;color:#6b7280;font-weight:500;text-transform:uppercase;letter-spacing:.04em">Queixa</span><div style="font-size:14px;margin-top:3px">'+xs(c.chief_complaint)+'</div></div>':'')+
+      (c.diagnosis?'<div style="margin-bottom:8px"><span style="font-size:12px;color:#6b7280;font-weight:500;text-transform:uppercase;letter-spacing:.04em">Diagnóstico</span><div style="font-size:14px;margin-top:3px">'+xs(c.diagnosis)+'</div></div>':'')+
+      (c.treatment?'<div style="margin-bottom:8px"><span style="font-size:12px;color:#6b7280;font-weight:500;text-transform:uppercase;letter-spacing:.04em">Tratamento</span><div style="font-size:14px;margin-top:3px">'+xs(c.treatment)+'</div></div>':'')+
+      (c.observations?'<div style="margin-bottom:8px"><span style="font-size:12px;color:#6b7280;font-weight:500;text-transform:uppercase;letter-spacing:.04em">Observações</span><div style="font-size:14px;margin-top:3px">'+xs(c.observations)+'</div></div>':'')+
+      (c.conduct?'<div style="margin-bottom:8px"><span style="font-size:12px;color:#6b7280;font-weight:500;text-transform:uppercase;letter-spacing:.04em">Conduta</span><div style="font-size:14px;margin-top:3px">'+xs(c.conduct)+'</div></div>':'')+
+      (c.return_date?'<div style="margin-bottom:10px;background:#E1F5EE;border-radius:8px;padding:8px 12px;font-size:13px;color:#085041">📅 Retorno: <strong>'+xs(c.return_date)+'</strong></div>':'')+
+      (rating?'<div style="margin-bottom:8px">'+starHtml(rating)+'</div>':'')+
+      (c.patient_comment?'<div style="background:#f9fafb;border-radius:8px;padding:10px 12px;font-size:13px;color:#6b7280;margin-bottom:10px;font-style:italic">"'+xs(c.patient_comment)+'"</div>':'')+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+      '<button class="btn btn-w btn-sm" data-cid="'+c.id+'" data-cdt="'+dt+'" data-cdoc="'+xs(c.doctor_name||'')+'" data-crating="'+rating+'" data-ccomment="'+xs(c.patient_comment||'')+'" onclick="openReview(this)">'+
+        (rating ? '✏️ Editar avaliação' : '⭐ Avaliar')+'</button>'+
+      '<button class="btn btn-w btn-sm" data-cid="'+c.id+'" onclick="openEditPatCons(this)">✏️ Editar</button>'+
+      '</div>'+
+      '</div>';
+  }).join('');
+}
+
+function openNewPatCons() {
+  currentConsId = null;
+  document.getElementById('m-pat-cons-t').textContent = 'Nova consulta';
+  document.getElementById('m-pat-cons-b').innerHTML = buildPatConsForm({});
+  document.getElementById('btn-save-review').textContent = 'Salvar consulta';
+  document.getElementById('btn-save-review').onclick = savePatCons;
+  openM('m-pat-cons');
+}
+
+function openEditPatCons(btn) {
+  var id = btn.dataset.cid;
+  currentConsId = id;
+  // Find consultation in DOM - reload from server
+  fetch(SB+'/rest/v1/consultations?id=eq.'+id+'&limit=1', {headers:hdr()})
+    .then(function(r){return r.json();})
+    .then(function(rows){
+      var c = rows[0]||{};
+      document.getElementById('m-pat-cons-t').textContent = 'Editar consulta';
+      document.getElementById('m-pat-cons-b').innerHTML = buildPatConsForm(c);
+      document.getElementById('btn-save-review').textContent = 'Atualizar consulta';
+      document.getElementById('btn-save-review').onclick = savePatCons;
+      openM('m-pat-cons');
+    });
+}
+
+function buildPatConsForm(c) {
+  return '<div class="f"><label>Médico</label><input id="pf-doc" value="'+xs(c.doctor_name||'')+'" placeholder="Nome do médico"></div>'+
+    '<div class="g2"><div class="f"><label>Especialidade</label><input id="pf-sp" value="'+xs(c.specialty||'')+'" placeholder="Ex: Cardiologia"></div>'+
+    '<div class="f"><label>Data</label><input type="date" id="pf-dt" value="'+(c.scheduled_at?c.scheduled_at.slice(0,10):'')+'"></div></div>'+
+    '<div class="f"><label>Status</label><select id="pf-st">'+
+    ['agendada','realizada','cancelada'].map(function(s){return'<option value="'+s+'"'+(c.status===s?' selected':'')+'>'+s.charAt(0).toUpperCase()+s.slice(1)+'</option>';}).join('')+
+    '</select></div>'+
+    '<div class="f"><label>Queixa principal</label><textarea id="pf-cc" rows="2" placeholder="Motivo da consulta...">'+xs(c.chief_complaint||'')+'</textarea></div>'+
+    '<div class="f"><label>Observações clínicas</label><textarea id="pf-ob" rows="2" placeholder="Exame físico, anamnese...">'+xs(c.observations||'')+'</textarea></div>'+
+    '<div class="f"><label>Diagnóstico</label><textarea id="pf-dg" rows="2" placeholder="Diagnóstico recebido...">'+xs(c.diagnosis||'')+'</textarea></div>'+
+    '<div class="f"><label>Conduta</label><textarea id="pf-cd" rows="2" placeholder="Exames pedidos, encaminhamentos...">'+xs(c.conduct||'')+'</textarea></div>'+
+    '<div class="f"><label>Tratamento / Prescrição</label><textarea id="pf-tr" rows="2" placeholder="Medicamentos, dosagem...">'+xs(c.treatment||'')+'</textarea></div>'+
+    '<div class="f"><label>Data de retorno</label><input id="pf-ret" value="'+xs(c.return_date||'')+'" placeholder="Ex: 30/06/2025"></div>'+
+    '<div class="f"><label>Notas pessoais</label><textarea id="pf-nt" rows="2" placeholder="Suas anotações sobre a consulta...">'+xs(c.notes||'')+'</textarea></div>';
+}
+
+async function savePatCons() {
+  var btn = document.getElementById('btn-save-review');
+  btn.disabled=true; btn.textContent='Salvando...';
+  var data = {
+    patient_id: pendingData ? pendingData.id : null,
+    doctor_name: gv('pf-doc'),
+    specialty: gv('pf-sp'),
+    scheduled_at: gv('pf-dt') || null,
+    status: gv('pf-st'),
+    chief_complaint: gv('pf-cc'),
+    observations: gv('pf-ob'),
+    diagnosis: gv('pf-dg'),
+    conduct: gv('pf-cd'),
+    treatment: gv('pf-tr'),
+    return_date: gv('pf-ret'),
+    notes: gv('pf-nt')
+  };
+  try {
+    if (currentConsId) {
+      var r = await fetch(SB+'/rest/v1/consultations?id=eq.'+currentConsId, {method:'PATCH',headers:hdr({'Prefer':'return=minimal'}),body:JSON.stringify(data)});
+      if (!r.ok) throw new Error(await r.text());
+    } else {
+      var r2 = await fetch(SB+'/rest/v1/consultations', {method:'POST',headers:hdr({'Prefer':'return=representation'}),body:JSON.stringify(data)});
+      if (!r2.ok) throw new Error(await r2.text());
+    }
+    closeM('m-pat-cons');
+    toast(currentConsId ? 'Consulta atualizada!' : 'Consulta salva!','ok');
+    loadPatCons();
+  } catch(e) { toast('Erro: '+e.message,'ko'); }
+  btn.disabled=false; btn.textContent = currentConsId ? 'Atualizar consulta' : 'Salvar consulta';
 }
 
 function openReview(btn) {
@@ -1427,6 +1104,177 @@ async function saveReview() {
   }
   btn.disabled=false; btn.textContent='Salvar avaliação';
 }
+
+
+// MISSING FUNCTIONS - restored
+
+function showForm() { loadPubForm(); }
+function showPLogin() { showPage('pg-plogin'); }
+function showAdminLogin() { showPage('pg-login'); }
+function doLogout() { showPage('pg-home'); }
+function copyFL() { navigator.clipboard.writeText(document.getElementById('flink').textContent).then(function(){ toast('Link copiado!','ok'); }); }
+function copyPix() { navigator.clipboard.writeText('contato@easycare.com.br').then(function(){ toast('PIX copiado!','ok'); }); }
+function toggleForgot() { var b=document.getElementById('forgot-box'); b.style.display=b.style.display==='none'?'block':'none'; }
+
+function shareLink() {
+  var url = 'https://eoqrx314-lang.github.io/easy-care/#e/'+pendingTok;
+  if(navigator.share) navigator.share({title:'Minha ficha Easy Care',url:url});
+  else navigator.clipboard.writeText(url).then(function(){ toast('Link copiado!','ok'); });
+}
+
+function goPatTab(n) {
+  document.getElementById('pat-tab1').style.display = n===1?'block':'none';
+  document.getElementById('pat-tab2').style.display = n===2?'block':'none';
+  document.getElementById('pat-nb1').classList.toggle('on',n===1);
+  document.getElementById('pat-nb2').classList.toggle('on',n===2);
+  if(n===2) loadPatCons();
+}
+
+function showEditPat() {
+  if(!pendingData) return;
+  document.getElementById('pedit-body').innerHTML=
+    '<div class="f"><label>Alergias (vírgula)</label><textarea id="pe-alg" rows="2">'+xs((pendingData.allergies||[]).join(', '))+'</textarea></div>'+
+    '<div class="f"><label>Medicamentos (vírgula)</label><textarea id="pe-med" rows="2">'+xs((pendingData.medications||[]).join(', '))+'</textarea></div>'+
+    '<div class="f"><label>Condições (vírgula)</label><textarea id="pe-cond" rows="2">'+xs((pendingData.conditions||[]).join(', '))+'</textarea></div>'+
+    '<div class="f"><label>Cirurgias</label><textarea id="pe-sg" rows="2">'+xs(pendingData.surgeries||'')+'</textarea></div>'+
+    '<div class="g2"><div class="f"><label>Contato emerg.</label><input id="pe-en" value="'+xs(pendingData.ec_name||'')+'"></div>'+
+    '<div class="f"><label>Tel. emerg.</label><input id="pe-ep" value="'+xs(pendingData.ec_phone||'')+'"></div></div>'+
+    '<div class="g2"><div class="f"><label>Convênio</label><input id="pe-ins" value="'+xs(pendingData.insurance||'')+'"></div>'+
+    '<div class="f"><label>Nº convênio</label><input id="pe-inn" value="'+xs(pendingData.ins_num||'')+'"></div></div>'+
+    '<div class="g3"><div class="f"><label>Sangue</label><select id="pe-bl">'+
+    ['','A+','A-','B+','B-','AB+','AB-','O+','O-','Não sei'].map(function(v){return'<option'+(pendingData.blood===v?' selected':'')+'>'+v+'</option>';}).join('')+
+    '</select></div><div class="f"><label>Altura</label><input id="pe-ht" type="number" value="'+xs(pendingData.height||'')+'"></div>'+
+    '<div class="f"><label>Peso</label><input id="pe-wt" type="number" value="'+xs(pendingData.weight||'')+'"></div></div>';
+  openM('m-pedit');
+}
+
+async function savePatEdit() {
+  var btn=event.target; btn.disabled=true; btn.textContent='Salvando...';
+  try {
+    var r=await fetch(SB+'/rest/v1/patients?token=eq.'+encodeURIComponent(pendingTok)+'&limit=1',{headers:hdr()});
+    var rows=await r.json();
+    if(!rows||!rows.length) throw new Error('Paciente não encontrado');
+    var updates={allergies:split(gv('pe-alg')),medications:split(gv('pe-med')),conditions:split(gv('pe-cond')),surgeries:gv('pe-sg'),ec_name:gv('pe-en'),ec_phone:gv('pe-ep'),insurance:gv('pe-ins'),ins_num:gv('pe-inn'),blood:gv('pe-bl'),height:gv('pe-ht'),weight:gv('pe-wt')};
+    await fetch(SB+'/rest/v1/patients?id=eq.'+rows[0].id,{method:'PATCH',headers:hdr({'Prefer':'return=minimal'}),body:JSON.stringify(updates)});
+    Object.assign(pendingData,updates);
+    closeM('m-pedit'); showPatCard(pendingData,pendingTok); toast('Ficha atualizada!','ok');
+  } catch(e){toast('Erro: '+e.message,'ko');}
+  btn.disabled=false; btn.textContent='Salvar';
+}
+
+async function patLogin() {
+  var email=document.getElementById('pl-email').value.trim().toLowerCase();
+  var pass=document.getElementById('pl-pass').value;
+  var err=document.getElementById('pl-err'); err.style.display='none';
+  if(!email||!pass){err.textContent='Preencha e-mail e senha.';err.style.display='block';return;}
+  var btn=event.target; btn.disabled=true; btn.textContent='Buscando...';
+  try {
+    var r=await fetch(SB+'/rest/v1/patients?or=(login_email.ilike.'+encodeURIComponent(email)+',email.ilike.'+encodeURIComponent(email)+')&access_pass=eq.'+encodeURIComponent(pass)+'&limit=1',{headers:hdr()});
+    var rows=await r.json();
+    if(!rows||!rows.length){err.textContent='E-mail ou senha incorretos.';err.style.display='block';btn.disabled=false;btn.textContent='Acessar minha ficha';return;}
+    showPatCard(rows[0],rows[0].token);
+  } catch(e){err.textContent='Erro: '+e.message;err.style.display='block';btn.disabled=false;btn.textContent='Acessar minha ficha';}
+}
+
+async function sendReset() {
+  var email=(document.getElementById('frgt-email').value||'').trim().toLowerCase();
+  var errEl=document.getElementById('frgt-err'), okEl=document.getElementById('frgt-ok');
+  errEl.style.display='none'; okEl.style.display='none';
+  if(!email){errEl.textContent='Digite seu e-mail.';errEl.style.display='block';return;}
+  var btn=event.target; btn.disabled=true; btn.textContent='Enviando...';
+  try {
+    var r=await fetch(SB+'/rest/v1/patients?or=(login_email.ilike.'+encodeURIComponent(email)+',email.ilike.'+encodeURIComponent(email)+')&limit=1',{headers:hdr()});
+    var rows=await r.json();
+    if(!rows||!rows.length){errEl.textContent='E-mail não encontrado.';errEl.style.display='block';btn.disabled=false;btn.textContent='Enviar link';return;}
+    var p=rows[0];
+    var tok='rst'+Math.random().toString(36).slice(2)+Date.now().toString(36);
+    await fetch(SB+'/rest/v1/patients?id=eq.'+p.id,{method:'PATCH',headers:hdr({'Prefer':'return=minimal'}),body:JSON.stringify({reset_token:tok,reset_expires:new Date(Date.now()+3600000).toISOString()})});
+    await sendEmail('reset',email,((p.first_name||'')+' '+(p.last_name||'')).trim(),'',tok);
+    okEl.style.display='block';
+  } catch(e){errEl.textContent='Erro: '+e.message;errEl.style.display='block';}
+  btn.disabled=false; btn.textContent='Enviar link';
+}
+
+var resetTok=null;
+function loadReset(tok){resetTok=tok;showPage('pg-reset');}
+
+async function doReset() {
+  var pass=gv('rst-pass'), pass2=gv('rst-pass2');
+  var err=document.getElementById('rst-err'); err.style.display='none';
+  if(!pass||pass.length<6){err.textContent='Mínimo 6 caracteres.';err.style.display='block';return;}
+  if(pass!==pass2){err.textContent='As senhas não coincidem.';err.style.display='block';return;}
+  var btn=document.getElementById('rst-btn'); btn.disabled=true; btn.textContent='Salvando...';
+  try {
+    var now=new Date().toISOString();
+    var r=await fetch(SB+'/rest/v1/patients?reset_token=eq.'+encodeURIComponent(resetTok)+'&reset_expires=gte.'+encodeURIComponent(now)+'&limit=1',{headers:hdr()});
+    var rows=await r.json();
+    if(!rows||!rows.length){err.textContent='Link inválido ou expirado.';err.style.display='block';btn.disabled=false;btn.textContent='Salvar nova senha';return;}
+    await fetch(SB+'/rest/v1/patients?id=eq.'+rows[0].id,{method:'PATCH',headers:hdr({'Prefer':'return=minimal'}),body:JSON.stringify({access_pass:pass,reset_token:null,reset_expires:null})});
+    toast('Senha redefinida!','ok');
+    setTimeout(function(){showPage('pg-plogin');},1500);
+  } catch(e){err.textContent='Erro: '+e.message;err.style.display='block';btn.disabled=false;btn.textContent='Salvar nova senha';}
+}
+
+async function loadEmg(tok) {
+  showPage('pg-emg');
+  document.getElementById('emgbody').innerHTML='<div class="ld"><span class="spin"></span>Carregando...</div>';
+  try {
+    var r=await fetch(SB+'/rest/v1/patients?token=eq.'+encodeURIComponent(tok)+'&limit=1',{headers:hdr()});
+    var rows=await r.json();
+    var p=rows[0];
+    if(!p){document.getElementById('emgbody').innerHTML='<div style="text-align:center;padding:40px;color:#6b7280"><h3>QR Code inválido</h3></div>';return;}
+    var age=p.dob?Math.floor((new Date()-new Date(p.dob))/31557600000)+' anos':'—';
+    var tags=function(arr,cls){return(arr||[]).map(function(v){return'<span class="tag '+cls+'">'+xs(v)+'</span>';}).join('');};
+    var h='<div class="ec" style="margin-top:14px">'+
+      (p.photo?'<img src="'+p.photo+'" style="width:60px;height:60px;border-radius:50%;object-fit:cover;float:left;margin-right:14px;border:2px solid #1D9E75" alt="">':'')+
+      '<div class="etit">Identificação</div>'+
+      '<div style="font-size:20px;font-weight:700;margin-bottom:3px">'+(p.first_name||'')+' '+(p.last_name||'')+'</div>'+
+      '<div style="font-size:13px;color:#6b7280;margin-bottom:12px;clear:both">'+age+(p.gender?' · '+xs(p.gender):'')+'</div>'+
+      '<div class="erow"><span class="elbl">CPF</span><span class="eval">'+(p.cpf||'—')+'</span></div>'+
+      '<div class="erow"><span class="elbl">Tipo sanguíneo</span><span class="eval"><span class="bbl">'+(p.blood||'—')+'</span></span></div>'+
+      (p.weight?'<div class="erow"><span class="elbl">Peso</span><span class="eval">'+xs(p.weight)+' kg</span></div>':'')+
+      (p.height?'<div class="erow"><span class="elbl">Altura</span><span class="eval">'+xs(p.height)+' cm</span></div>':'')+
+      '</div>';
+    if((p.allergies&&p.allergies.length)||(p.conditions&&p.conditions.length)){
+      h+='<div class="ec acard"><div class="etit">⚠ Alertas críticos</div>'+
+        (p.allergies&&p.allergies.length?'<div style="margin-bottom:10px"><div style="font-size:12px;color:#6b7280;margin-bottom:6px">Alergias</div><div class="trow">'+tags(p.allergies,'t-r')+'</div></div>':'')+
+        (p.conditions&&p.conditions.length?'<div><div style="font-size:12px;color:#6b7280;margin-bottom:6px">Condições</div><div class="trow">'+tags(p.conditions,'t-a')+'</div></div>':'')+
+        '</div>';
+    }
+    if(p.medications&&p.medications.length) h+='<div class="ec"><div class="etit">Medicamentos</div><div class="trow">'+tags(p.medications,'t-b')+'</div></div>';
+    if((p.disabilities&&p.disabilities.length)||p.dis_obs){
+      h+='<div class="ec"><div class="etit">Necessidades especiais</div>'+
+        (p.disabilities&&p.disabilities.length?'<div class="trow" style="margin-bottom:8px">'+tags(p.disabilities,'t-g')+'</div>':'')+
+        (p.dis_obs?'<div style="font-size:13px">'+xs(p.dis_obs)+'</div>':'')+
+        '</div>';
+    }
+    if(p.surgeries) h+='<div class="ec"><div class="etit">Cirurgias</div><div style="font-size:14px;line-height:1.7">'+xs(p.surgeries)+'</div></div>';
+    h+='<div class="ec"><div class="etit">Contato de emergência</div>'+
+      '<div class="erow"><span class="elbl">Nome</span><span class="eval">'+(p.ec_name||'—')+(p.ec_rel?' <span style="color:#9ca3af;font-size:12px">('+xs(p.ec_rel)+')</span>':'')+'</span></div>'+
+      '<div class="erow"><span class="elbl">Telefone</span><span class="eval">'+(p.ec_phone?'<a href="tel:'+xs(p.ec_phone)+'" style="color:#0F6E56;font-weight:600">'+xs(p.ec_phone)+'</a>':'—')+'</span></div>'+
+      '<div class="erow"><span class="elbl">Convênio</span><span class="eval">'+(p.insurance||'—')+(p.ins_num?' · '+xs(p.ins_num):'')+'</span></div>'+
+      '</div>'+
+      '<div style="text-align:center;font-size:11px;color:#9ca3af;margin-top:16px">Easy Care · LGPD</div>'+
+      '<div style="text-align:center;margin-top:12px"><button class="btn btn-w btn-sm" onclick="history.back()">← Voltar</button></div>';
+    document.getElementById('emgbody').innerHTML=h;
+  } catch(e){document.getElementById('emgbody').innerHTML='<div style="text-align:center;padding:40px;color:#6b7280"><h3>Erro</h3><p>'+e.message+'</p></div>';}
+}
+
+// DOCTOR PORTAL STUBS
+var currentDoctor=null;
+function goDTab(n){
+  document.getElementById('dtab1').style.display=n===1?'block':'none';
+  document.getElementById('dtab2').style.display=n===2?'block':'none';
+  document.getElementById('dnb1').classList.toggle('on',n===1);
+  document.getElementById('dnb2').classList.toggle('on',n===2);
+  if(n===1) loadDocCons();
+  if(n===2) buildDocConsForm();
+}
+async function doDoctorLogin(){toast('Portal médico em breve','ko');}
+async function loadDocCons(){}
+async function buildDocConsForm(prefill){}
+async function saveDocCons(){}
+async function editDocCons(id){}
 
 // MODALS
 function openM(id) { document.getElementById(id).classList.add('open'); }
