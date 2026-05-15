@@ -273,6 +273,10 @@ tr:hover td{background:#fafafa}
     </div>
     <div><h1>Sua ficha Easy Care</h1><p>Apresente ou imprima seu QR Code</p></div>
   </div>
+  <div style="background:#fff;border-bottom:1px solid #e5e7eb;display:flex;padding:0 16px">
+    <button class="nb on" id="pat-nb1" onclick="goPatTab(1)">Minha ficha</button>
+    <button class="nb" id="pat-nb2" onclick="goPatTab(2)">Consultas</button>
+  </div>
   <div class="pb">
     <div class="pc" style="text-align:center">
       <div class="pt" style="text-align:left">Seu QR Code de emergência</div>
@@ -1296,6 +1300,128 @@ async function loadEmg(tok) {
       '<div style="text-align:center;margin-top:12px"><button class="btn btn-w btn-sm" onclick="history.back()">← Voltar</button></div>';
     document.getElementById('emgbody').innerHTML=h;
   } catch(e) {document.getElementById('emgbody').innerHTML='<div style="text-align:center;padding:40px;color:#6b7280"><h3>Erro</h3><p>'+e.message+'</p></div>';}
+}
+
+// PATIENT TABS
+function goPatTab(n) {
+  document.getElementById('pat-tab1').style.display = n===1 ? 'block' : 'none';
+  document.getElementById('pat-tab2').style.display = n===2 ? 'block' : 'none';
+  document.getElementById('pat-nb1').classList.toggle('on', n===1);
+  document.getElementById('pat-nb2').classList.toggle('on', n===2);
+  if (n===2) loadPatCons();
+}
+
+var currentConsId = null;
+
+async function loadPatCons() {
+  if (!pendingData || !pendingData.id) {
+    document.getElementById('pat-cons-list').innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280"><p>Nenhuma consulta registrada ainda.</p></div>';
+    return;
+  }
+  document.getElementById('pat-cons-list').innerHTML = '<div class="ld"><span class="spin"></span>Carregando...</div>';
+  try {
+    var r = await fetch(SB+'/rest/v1/consultations?patient_id=eq.'+pendingData.id+'&order=created_at.desc', {headers:hdr()});
+    if (!r.ok) throw new Error(await r.text());
+    var list = await r.json();
+    if (!list.length) {
+      document.getElementById('pat-cons-list').innerHTML = 
+        '<div style="text-align:center;padding:60px 20px">'+
+        '<div style="font-size:40px;margin-bottom:12px">🩺</div>'+
+        '<h3 style="font-size:16px;font-weight:600;margin-bottom:6px">Nenhuma consulta registrada</h3>'+
+        '<p style="font-size:14px;color:#6b7280">Suas consultas aparecerão aqui após serem registradas pelo médico.</p>'+
+        '</div>';
+      return;
+    }
+    var stMap = {agendada:'background:#EFF6FF;color:#1e40af', realizada:'background:#E1F5EE;color:#0F6E56', cancelada:'background:#FCEBEB;color:#A32D2D'};
+    var starHtml = function(rating) {
+      var s = '';
+      for (var i=1;i<=5;i++) s += '<span style="color:'+(i<=rating?'#F59E0B':'#d1d5db');s+=';font-size:18px">★</span>';
+      return s;
+    };
+    var html = list.map(function(c) {
+      var dt = c.scheduled_at ? new Date(c.scheduled_at).toLocaleDateString('pt-BR') : new Date(c.created_at).toLocaleDateString('pt-BR');
+      var stStyle = stMap[c.status] || 'background:#f3f4f6;color:#6b7280';
+      var rating = c.patient_rating || 0;
+      return '<div class="pc" style="margin-bottom:14px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">'+
+        '<div>'+
+          '<div style="font-size:15px;font-weight:600">'+xs(c.doctor_name||'Médico não informado')+'</div>'+
+          '<div style="font-size:12px;color:#6b7280;margin-top:2px">'+dt+(c.specialty?' · '+xs(c.specialty):'')+'</div>'+
+        '</div>'+
+        '<span style="'+stStyle+';padding:2px 10px;border-radius:99px;font-size:12px;font-weight:500">'+xs(c.status||'—')+'</span>'+
+        '</div>'+
+        (c.chief_complaint?'<div style="margin-bottom:8px"><span style="font-size:12px;color:#6b7280;font-weight:500">QUEIXA</span><div style="font-size:14px;margin-top:3px">'+xs(c.chief_complaint)+'</div></div>':'')+
+        (c.diagnosis?'<div style="margin-bottom:8px"><span style="font-size:12px;color:#6b7280;font-weight:500">DIAGNÓSTICO</span><div style="font-size:14px;margin-top:3px">'+xs(c.diagnosis)+'</div></div>':'')+
+        (c.treatment?'<div style="margin-bottom:8px"><span style="font-size:12px;color:#6b7280;font-weight:500">TRATAMENTO</span><div style="font-size:14px;margin-top:3px">'+xs(c.treatment)+'</div></div>':'')+
+        (c.return_date?'<div style="margin-bottom:10px;background:#E1F5EE;border-radius:8px;padding:8px 12px;font-size:13px;color:#085041">📅 Retorno: <strong>'+xs(c.return_date)+'</strong></div>':'')+
+        (rating?'<div style="margin-bottom:8px">'+starHtml(rating)+'</div>':'')+
+        (c.patient_comment?'<div style="background:#f9fafb;border-radius:8px;padding:10px 12px;font-size:13px;color:#6b7280;margin-bottom:10px;font-style:italic">"'+xs(c.patient_comment)+'"</div>':'')+
+        '<button class="btn btn-w btn-sm" data-cid="'+c.id+'" data-cdt="'+dt+'" data-cdoc="'+xs(c.doctor_name||'')+'" data-crating="'+rating+'" data-ccomment="'+xs(c.patient_comment||'')+'" onclick="openReview(this)">'+
+          (rating ? '✏️ Editar avaliação' : '⭐ Avaliar consulta')+
+        '</button>'+
+        '</div>';
+    }).join('');
+    document.getElementById('pat-cons-list').innerHTML = html;
+  } catch(e) {
+    document.getElementById('pat-cons-list').innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280"><p>Erro: '+e.message+'</p></div>';
+  }
+}
+
+function openReview(btn) {
+  currentConsId = btn.dataset.cid;
+  var rating = parseInt(btn.dataset.crating)||0;
+  var comment = btn.dataset.ccomment||'';
+  var doc = btn.dataset.cdoc;
+  var dt = btn.dataset.cdt;
+  document.getElementById('m-pat-cons-t').textContent = doc + ' · ' + dt;
+  document.getElementById('m-pat-cons-b').innerHTML =
+    '<div style="margin-bottom:20px">'+
+    '<div style="font-size:14px;font-weight:500;margin-bottom:10px">Como foi sua consulta?</div>'+
+    '<div id="star-rating" style="display:flex;gap:8px;margin-bottom:4px">'+
+    [1,2,3,4,5].map(function(i){
+      return '<button onclick="setRating('+i+')" id="star-'+i+'" style="background:none;border:none;font-size:32px;cursor:pointer;color:'+(i<=rating?'#F59E0B':'#d1d5db')+'">★</button>';
+    }).join('')+
+    '</div>'+
+    '<div id="rating-label" style="font-size:13px;color:#6b7280;height:20px">'+ratingLabel(rating)+'</div>'+
+    '</div>'+
+    '<div class="f"><label>Comentário (opcional)</label><textarea id="pat-comment" rows="4" placeholder="Descreva sua experiência com a consulta...">'+comment+'</textarea></div>';
+  window._currentRating = rating;
+  openM('m-pat-cons');
+}
+
+function ratingLabel(r) {
+  var labels = ['','Muito ruim','Ruim','Regular','Bom','Excelente'];
+  return r ? labels[r] : 'Toque nas estrelas para avaliar';
+}
+
+function setRating(n) {
+  window._currentRating = n;
+  for (var i=1;i<=5;i++) {
+    document.getElementById('star-'+i).style.color = i<=n ? '#F59E0B' : '#d1d5db';
+  }
+  document.getElementById('rating-label').textContent = ratingLabel(n);
+}
+
+async function saveReview() {
+  if (!currentConsId) return;
+  var rating = window._currentRating || 0;
+  var comment = gv('pat-comment');
+  var btn = document.getElementById('btn-save-review');
+  btn.disabled=true; btn.textContent='Salvando...';
+  try {
+    var r = await fetch(SB+'/rest/v1/consultations?id=eq.'+currentConsId, {
+      method:'PATCH',
+      headers:hdr({'Prefer':'return=minimal'}),
+      body:JSON.stringify({patient_rating:rating, patient_comment:comment})
+    });
+    if (!r.ok) throw new Error(await r.text());
+    closeM('m-pat-cons');
+    toast('Avaliação salva!','ok');
+    loadPatCons();
+  } catch(e) {
+    toast('Erro: '+e.message,'ko');
+  }
+  btn.disabled=false; btn.textContent='Salvar avaliação';
 }
 
 // MODALS
