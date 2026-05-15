@@ -254,7 +254,7 @@ tr:hover td{background:#fafafa}
     </div>
     <div class="pixbox">
       <div style="font-size:13px;color:#085041;font-weight:500;margin-bottom:4px">Pague via PIX</div>
-      <div style="font-size:16px;font-weight:700;color:#0F6E56;margin:6px 0">contato@easycare.com.br</div>
+      <div style="font-size:16px;font-weight:700;color:#0F6E56;margin:6px 0">contato@easycareapp.com.br</div>
       <button id="btn-copy-pix" class="btn btn-w btn-sm" style="margin-top:8px">Copiar chave PIX</button>
     </div>
     <div style="font-size:13px;color:#6b7280;line-height:2.2;margin-bottom:20px">
@@ -436,6 +436,30 @@ tr:hover td{background:#fafafa}
   <div class="modal-f"><button class="btn btn-w" onclick="closeM('m-doctor')">Cancelar</button><button id="btn-save-doc" class="btn btn-g">Salvar</button></div></div>
 </div>
 
+<!-- MODAL CONSULTA PACIENTE -->
+<div class="overlay" id="m-pat-cons" style="align-items:flex-start;padding-top:24px">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-h"><h2 id="m-pat-cons-t">Consulta</h2><button class="modal-x" onclick="closeM('m-pat-cons')">×</button></div>
+    <div class="modal-b" id="m-pat-cons-b"></div>
+    <div class="modal-f">
+      <button class="btn btn-w" onclick="closeM('m-pat-cons')">Cancelar</button>
+      <button class="btn btn-g" id="btn-save-review">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AVALIAÇÃO -->
+<div class="overlay" id="m-review">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-h"><h2 id="m-review-t">Avaliar consulta</h2><button class="modal-x" onclick="closeM('m-review')">×</button></div>
+    <div class="modal-b" id="m-review-b"></div>
+    <div class="modal-f">
+      <button class="btn btn-w" onclick="closeM('m-review')">Cancelar</button>
+      <button class="btn btn-g" id="btn-confirm-review" onclick="saveReview()">Salvar avaliação</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -532,7 +556,7 @@ function initButtons() {
   document.getElementById('btn-form-back').addEventListener('click', function() { showPage('pg-home'); });
   document.getElementById('btn-print-pub').addEventListener('click', function() { printQR('qr-pub'); });
   // Payment
-  document.getElementById('btn-copy-pix').addEventListener('click', function() { navigator.clipboard.writeText('contato@easycare.com.br').then(function() { toast('PIX copiado!','ok'); }); });
+  document.getElementById('btn-copy-pix').addEventListener('click', function() { navigator.clipboard.writeText('contato@easycareapp.com.br').then(function() { toast('PIX copiado!','ok'); }); });
   document.getElementById('btn-confirm-pay').addEventListener('click', confirmPay);
   // Patient
   document.getElementById('btn-print-pat').addEventListener('click', function() { printQR('qr-pat'); });
@@ -982,6 +1006,7 @@ function openNewPatCons() {
   document.getElementById('m-pat-cons-b').innerHTML = buildPatConsForm({});
   document.getElementById('btn-save-review').textContent = 'Salvar consulta';
   document.getElementById('btn-save-review').onclick = savePatCons;
+  document.getElementById('btn-save-review').onclick = savePatCons;
   openM('m-pat-cons');
 }
 
@@ -1055,8 +1080,8 @@ function openReview(btn) {
   var comment = btn.dataset.ccomment||'';
   var doc = btn.dataset.cdoc;
   var dt = btn.dataset.cdt;
-  document.getElementById('m-pat-cons-t').textContent = doc + ' · ' + dt;
-  document.getElementById('m-pat-cons-b').innerHTML =
+  document.getElementById('m-review-t').textContent = (doc||'Consulta') + (dt?' · '+dt:'');
+  document.getElementById('m-review-b').innerHTML =
     '<div style="margin-bottom:20px">'+
     '<div style="font-size:14px;font-weight:500;margin-bottom:10px">Como foi sua consulta?</div>'+
     '<div id="star-rating" style="display:flex;gap:8px;margin-bottom:4px">'+
@@ -1068,7 +1093,7 @@ function openReview(btn) {
     '</div>'+
     '<div class="f"><label>Comentário (opcional)</label><textarea id="pat-comment" rows="4" placeholder="Descreva sua experiência com a consulta...">'+comment+'</textarea></div>';
   window._currentRating = rating;
-  openM('m-pat-cons');
+  openM('m-review');
 }
 
 function ratingLabel(r) {
@@ -1114,11 +1139,11 @@ function showPLogin() { showPage('pg-plogin'); }
 function showAdminLogin() { showPage('pg-login'); }
 function doLogout() { showPage('pg-home'); }
 function copyFL() { navigator.clipboard.writeText(document.getElementById('flink').textContent).then(function(){ toast('Link copiado!','ok'); }); }
-function copyPix() { navigator.clipboard.writeText('contato@easycare.com.br').then(function(){ toast('PIX copiado!','ok'); }); }
+function copyPix() { navigator.clipboard.writeText('contato@easycareapp.com.br').then(function(){ toast('PIX copiado!','ok'); }); }
 function toggleForgot() { var b=document.getElementById('forgot-box'); b.style.display=b.style.display==='none'?'block':'none'; }
 
 function shareLink() {
-  var url = 'https://eoqrx314-lang.github.io/easy-care/#e/'+pendingTok;
+  var url = 'https://easycareapp.com.br#e/'+pendingTok;
   if(navigator.share) navigator.share({title:'Minha ficha Easy Care',url:url});
   else navigator.clipboard.writeText(url).then(function(){ toast('Link copiado!','ok'); });
 }
