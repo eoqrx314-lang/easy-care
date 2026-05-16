@@ -1718,6 +1718,82 @@ async function saveClient() {
 // Also track QR scans - patch loadEmg to register scan
 var _origLoadEmg = null;
 
+// OFFLINE QR CODE
+function saveOffline() {
+  if (!pendingData || !pendingTok) { toast('Nenhuma ficha carregada','ko'); return; }
+  var p = pendingData;
+  var url = 'https://easycareapp.com.br/#e/' + pendingTok;
+  var age = p.dob ? Math.floor((new Date()-new Date(p.dob))/31557600000)+' anos' : '';
+  var tags = function(arr) { return (arr||[]).join(', ') || '—'; };
+
+  // Generate standalone HTML with QR Code embedded
+  var qrImg = document.querySelector('#qr-pat img');
+  var qrSrc = qrImg ? qrImg.src : '';
+
+  var html = '<!DOCTYPE html><html lang="pt-BR"><head>'+
+    '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+
+    '<title>Easy Care - '+xs(p.first_name)+' '+xs(p.last_name)+'</title>'+
+    '<style>'+
+    'body{font-family:sans-serif;max-width:400px;margin:0 auto;padding:20px;color:#1a1a1a}'+
+    '.header{background:#E24B4A;color:#fff;padding:16px;border-radius:12px;margin-bottom:16px;display:flex;align-items:center;gap:12px}'+
+    '.header h1{font-size:16px;font-weight:700;margin:0}'+
+    '.header p{font-size:12px;margin:3px 0 0;opacity:.85}'+
+    '.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px}'+
+    '.title{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin-bottom:10px}'+
+    '.name{font-size:22px;font-weight:700;margin-bottom:4px}'+
+    '.sub{font-size:13px;color:#6b7280;margin-bottom:12px}'+
+    '.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:13px}'+
+    '.row:last-child{border-bottom:none}'+
+    '.lbl{color:#6b7280}.val{font-weight:500}'+
+    '.blood{background:#FCEBEB;color:#A32D2D;padding:3px 12px;border-radius:99px;font-size:14px;font-weight:700;display:inline-block}'+
+    '.alert{border:1.5px solid #F09595;border-radius:12px;padding:14px;margin-bottom:12px}'+
+    '.alert .title{color:#A32D2D}'+
+    '.qr-box{text-align:center;padding:16px}'+
+    '.qr-box img{width:180px;height:180px}'+
+    '.qr-box p{font-size:11px;color:#6b7280;margin-top:8px}'+
+    '.footer{text-align:center;font-size:11px;color:#9ca3af;margin-top:16px}'+
+    '@media print{body{max-width:100%}}'+
+    '</style></head><body>'+
+    '<div class="header">'+
+      '<div style="width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px">🏥</div>'+
+      '<div><h1>Easy Care — Emergência</h1><p>Informações médicas críticas</p></div>'+
+    '</div>'+
+    '<div class="card">'+
+      '<div class="title">Identificação</div>'+
+      '<div class="name">'+xs(p.first_name)+' '+xs(p.last_name)+'</div>'+
+      '<div class="sub">'+age+(p.gender?' · '+xs(p.gender):'')+'</div>'+
+      '<div class="row"><span class="lbl">CPF</span><span class="val">'+(p.cpf||'—')+'</span></div>'+
+      '<div class="row"><span class="lbl">Tipo sanguíneo</span><span class="val"><span class="blood">'+(p.blood||'—')+'</span></span></div>'+
+      (p.weight?'<div class="row"><span class="lbl">Peso</span><span class="val">'+p.weight+' kg</span></div>':'')+
+      (p.height?'<div class="row"><span class="lbl">Altura</span><span class="val">'+p.height+' cm</span></div>':'')+
+    '</div>'+
+    ((p.allergies&&p.allergies.length)||(p.conditions&&p.conditions.length)?
+      '<div class="alert">'+
+        '<div class="title">⚠ Alertas críticos</div>'+
+        (p.allergies&&p.allergies.length?'<div class="row"><span class="lbl">Alergias</span><span class="val">'+tags(p.allergies)+'</span></div>':'')+
+        (p.conditions&&p.conditions.length?'<div class="row"><span class="lbl">Condições</span><span class="val">'+tags(p.conditions)+'</span></div>':'')+
+      '</div>':'')+
+    (p.medications&&p.medications.length?'<div class="card"><div class="title">Medicamentos</div><div style="font-size:13px">'+tags(p.medications)+'</div></div>':'')+
+    (p.surgeries?'<div class="card"><div class="title">Cirurgias</div><div style="font-size:13px">'+xs(p.surgeries)+'</div></div>':'')+
+    '<div class="card"><div class="title">Contato de emergência</div>'+
+      '<div class="row"><span class="lbl">Nome</span><span class="val">'+(p.ec_name||'—')+'</span></div>'+
+      '<div class="row"><span class="lbl">Telefone</span><span class="val">'+(p.ec_phone||'—')+'</span></div>'+
+      '<div class="row"><span class="lbl">Convênio</span><span class="val">'+(p.insurance||'—')+'</span></div>'+
+    '</div>'+
+    (qrSrc?'<div class="qr-box"><div class="title" style="text-align:center">QR Code de emergência</div><img src="'+qrSrc+'" alt="QR Code"><p>Escaneie para ver os dados online</p></div>':'')+
+    '<div class="footer">Easy Care · easycareapp.com.br · Dados protegidos por LGPD</div>'+
+    '</body></html>';
+
+  var blob = new Blob([html], {type:'text/html;charset=utf-8'});
+  var url2 = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url2;
+  a.download = 'easy-care-'+xs(p.first_name)+'-'+xs(p.last_name)+'.html';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url2);
+  toast('Ficha salva! Abra o arquivo para ver offline.','ok');
+}
+
 // MODALS
 function openM(id) { document.getElementById(id).classList.add('open'); }
 function closeM(id) { document.getElementById(id).classList.remove('open'); }
