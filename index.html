@@ -160,6 +160,7 @@ tr:hover td{background:#fafafa}
     <button class="nb" id="nb3" onclick="goTab(3)">Consultas</button>
     <button class="nb" id="nb4" onclick="goTab(4)">Médicos</button>
     <button class="nb" id="nb5" onclick="goTab(5)">🏢 Clientes B2B</button>
+    <button class="nb" id="nb6" onclick="goTab(6)">📋 Acessos</button>
   </div>
   <div class="main">
     <!-- DASHBOARD -->
@@ -207,6 +208,23 @@ tr:hover td{background:#fafafa}
         </table></div>
         <div id="clients-ld" class="ld"><span class="spin"></span>Carregando...</div>
         <div id="clients-em" style="display:none;text-align:center;padding:60px 20px"><h3>Nenhum cliente cadastrado</h3></div>
+      </div>
+    </div>
+
+    <!-- LOG DE ACESSOS -->
+    <div id="tab6" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div><h2 style="font-size:18px;font-weight:700">Log de acessos</h2>
+        <p style="font-size:13px;color:#6b7280">Quando e quem acessou cada QR Code</p></div>
+        <button class="btn btn-w btn-sm" onclick="loadLogs()">🔄 Atualizar</button>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Paciente</th><th>Data/Hora</th><th>Dispositivo</th></tr></thead>
+          <tbody id="logs-tbody"></tbody>
+        </table></div>
+        <div id="logs-ld" class="ld"><span class="spin"></span>Carregando...</div>
+        <div id="logs-em" style="display:none;text-align:center;padding:60px 20px"><h3>Nenhum acesso registrado ainda</h3><p style="color:#6b7280">Os acessos aparecerão quando alguém escanear um QR Code</p></div>
       </div>
     </div>
 
@@ -624,6 +642,15 @@ tr:hover td{background:#fafafa}
   </div>
 </div>
 
+<!-- MODAL IMPORTAÇÃO EM LOTE -->
+<div class="overlay" id="m-batch" style="align-items:flex-start;padding-top:24px">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-h"><h2>Importar pacientes via CSV</h2><button class="modal-x" onclick="closeM('m-batch')">×</button></div>
+    <div class="modal-b" id="m-batch-b"></div>
+    <div class="modal-f"><button class="btn btn-w" onclick="closeM('m-batch')">Cancelar</button><button class="btn btn-g" onclick="saveBatch()">Importar</button></div>
+  </div>
+</div>
+
 <!-- MODAL CLIENTE B2B -->
 <div class="overlay" id="m-client" style="align-items:flex-start;padding-top:24px">
   <div class="modal" style="max-width:640px">
@@ -675,6 +702,11 @@ async function sendEmail(type, to, name, qr_url, token) {
   try {
     await fetch(EMAIL_FN, {method:'POST',headers:{'Content-Type':'application/json','apikey':SK},body:JSON.stringify({type:type,to:to,name:name,qr_url:qr_url,token:token})});
   } catch(e) { console.log('Email:', e.message); }
+}
+
+// 2FA email alias
+async function send2FAEmail(code) {
+  await sendEmail('2fa', ADMIN_EMAIL, 'Admin', '', code);
 }
 
 // PAGES
@@ -777,7 +809,7 @@ function doAdminLogin() {
 
 // TABS
 function goTab(n) {
-  for(var i=0;i<=5;i++) {
+  for(var i=0;i<=6;i++) {
     var t=document.getElementById('tab'+i), b=document.getElementById('nb'+i);
     if(t) t.style.display=n===i?'block':'none';
     if(b) b.classList.toggle('on',n===i);
@@ -786,6 +818,7 @@ function goTab(n) {
   if(n===1) loadList();
   if(n===2) initAdmForm();
   if(n===5) loadClients();
+  if(n===6) loadLogs();
 }
 
 // Stub functions for admin consultation tabs (to be implemented)
@@ -892,6 +925,16 @@ async function doDelete() {
 
 // FORM BUILDER
 var rPhoto='';
+// CRYPTO - hash de senha com SHA-256
+async function hashPass(pass) {
+  if (!pass) return '';
+  var encoder = new TextEncoder();
+  var data = encoder.encode(pass + 'easycare_salt_2026');
+  var hash = await crypto.subtle.digest('SHA-256', data);
+  var arr = Array.from(new Uint8Array(hash));
+  return arr.map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+}
+
 function split(str) {
   if(!str||!str.trim()) return [];
   return str.split(',').map(function(s){return s.trim();}).filter(function(s){return s.length>0;});
@@ -1309,6 +1352,116 @@ async function saveReview() {
 
 // MISSING FUNCTIONS - restored
 
+// LOG DE ACESSOS
+async function loadLogs() {
+  document.getElementById('logs-ld').style.display='block';
+  document.getElementById('logs-em').style.display='none';
+  document.getElementById('logs-tbody').innerHTML='';
+  try {
+    var r=await fetch(SB+'/rest/v1/access_logs?order=accessed_at.desc&limit=200',{headers:hdr()});
+    var logs=await r.json();
+    if(!logs.length){document.getElementById('logs-em').style.display='block';}
+    else {
+      document.getElementById('logs-tbody').innerHTML=logs.map(function(l){
+        var dt=new Date(l.accessed_at).toLocaleDateString('pt-BR')+' '+new Date(l.accessed_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+        var ua=l.user_agent||'';
+        var device=ua.indexOf('iPhone')>=0||ua.indexOf('Android')>=0?'📱 Mobile':'💻 Desktop';
+        return '<tr>'+
+          '<td><strong>'+xs(l.patient_name||'—')+'</strong></td>'+
+          '<td style="color:#6b7280">'+dt+'</td>'+
+          '<td style="color:#6b7280">'+device+'</td>'+
+          '</tr>';
+      }).join('');
+    }
+  } catch(e){toast('Erro: '+e.message,'ko');}
+  document.getElementById('logs-ld').style.display='none';
+}
+
+// CADASTRO EM LOTE VIA CSV
+function openBatchImport() {
+  document.getElementById('m-batch-b').innerHTML=
+    '<div style="background:#E1F5EE;border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;color:#085041">'+
+    '<strong>Formato do CSV:</strong><br>Nome, Sobrenome, CPF, Telefone, Email, Nascimento (DD/MM/AAAA), Sangue, Alergias, Medicamentos, Condições<br>'+
+    '<a href="#" onclick="downloadTemplate()" style="color:#0F6E56;font-weight:600">📥 Baixar modelo CSV</a></div>'+
+    '<div class="f"><label>Arquivo CSV <span class="req">*</span></label><input type="file" id="batch-file" accept=".csv"></div>'+
+    '<div class="f"><label>Cliente/Prefeitura (opcional)</label><select id="batch-client"><option value="">Nenhum</option>'+
+    (allClients||[]).map(function(c){return'<option value="'+c.id+'">'+xs(c.name)+'</option>';}).join('')+
+    '</select></div>'+
+    '<div id="batch-preview" style="display:none;margin-top:12px"></div>';
+  document.getElementById('batch-file').addEventListener('change', previewCSV);
+  openM('m-batch');
+}
+
+function downloadTemplate() {
+  var csv = 'Nome,Sobrenome,CPF,Telefone,Email,Nascimento,Sangue,Alergias,Medicamentos,Condicoes\n';
+  csv += 'João,da Silva,000.000.000-00,(11) 99999-9999,joao@email.com,01/01/1990,O+,Penicilina,Metformina 500mg,Diabetes tipo 2';
+  var blob=new Blob([csv],{type:'text/csv'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='modelo-easy-care.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+var batchRows = [];
+function previewCSV() {
+  var file=document.getElementById('batch-file').files[0]; if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var lines=e.target.result.split('\n').filter(function(l){return l.trim();});
+    var headers=lines[0].split(',');
+    batchRows=[];
+    for(var i=1;i<lines.length;i++){
+      var cols=lines[i].split(',');
+      if(cols.length>=4) batchRows.push({
+        first_name:(cols[0]||'').trim(),
+        last_name:(cols[1]||'').trim(),
+        cpf:(cols[2]||'').trim(),
+        phone:(cols[3]||'').trim(),
+        email:(cols[4]||'').trim(),
+        dob:parseBRDate((cols[5]||'').trim()),
+        blood:(cols[6]||'').trim(),
+        allergies:split(cols[7]||''),
+        medications:split(cols[8]||''),
+        conditions:split(cols[9]||''),
+        lgpd:true
+      });
+    }
+    document.getElementById('batch-preview').style.display='block';
+    document.getElementById('batch-preview').innerHTML=
+      '<div style="background:#f9fafb;border-radius:8px;padding:12px;font-size:13px">'+
+      '<strong>'+batchRows.length+' pacientes encontrados</strong><br>'+
+      'Prévia: '+batchRows.slice(0,3).map(function(r){return xs(r.first_name)+' '+xs(r.last_name);}).join(', ')+
+      (batchRows.length>3?'...':'')+
+      '</div>';
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+function parseBRDate(d) {
+  if(!d) return null;
+  var p=d.split('/');
+  if(p.length===3) return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+  return null;
+}
+
+async function saveBatch() {
+  if(!batchRows.length){toast('Nenhum dado para importar','ko');return;}
+  var clientId=gv('batch-client')||null;
+  var btn=event.target; btn.disabled=true; btn.textContent='Importando...';
+  var ok=0, fail=0;
+  for(var i=0;i<batchRows.length;i++){
+    try {
+      var row=Object.assign({},batchRows[i]);
+      row.token='tok'+Math.random().toString(36).slice(2)+Date.now().toString(36);
+      if(clientId) row.client_id=clientId;
+      await fetch(SB+'/rest/v1/patients',{method:'POST',headers:hdr({'Prefer':'return=minimal'}),body:JSON.stringify(row)});
+      ok++;
+    } catch(e){ fail++; }
+  }
+  closeM('m-batch');
+  await loadList();
+  toast(ok+' pacientes importados'+(fail?' ('+fail+' erros)':'')+'!','ok');
+  btn.disabled=false; btn.textContent='Importar';
+}
+
 // LGPD
 function showLgpdPage(tab) {
   showPage('pg-lgpd');
@@ -1413,7 +1566,8 @@ async function patLogin() {
   if(!email||!pass){err.textContent='Preencha e-mail e senha.';err.style.display='block';return;}
   var btn=event.target; btn.disabled=true; btn.textContent='Buscando...';
   try {
-    var r=await fetch(SB+'/rest/v1/patients?or=(login_email.ilike.'+encodeURIComponent(email)+',email.ilike.'+encodeURIComponent(email)+')&access_pass=eq.'+encodeURIComponent(pass)+'&limit=1',{headers:hdr()});
+    var hashedPass = await hashPass(pass);
+  var r=await fetch(SB+'/rest/v1/patients?or=(login_email.ilike.'+encodeURIComponent(email)+',email.ilike.'+encodeURIComponent(email)+')&access_pass=eq.'+encodeURIComponent(hashedPass)+'&limit=1',{headers:hdr()});
     var rows=await r.json();
     if(!rows||!rows.length){err.textContent='E-mail ou senha incorretos.';err.style.display='block';btn.disabled=false;btn.textContent='Acessar minha ficha';return;}
     showPatCard(rows[0],rows[0].token);
@@ -1453,7 +1607,8 @@ async function doReset() {
     var r=await fetch(SB+'/rest/v1/patients?reset_token=eq.'+encodeURIComponent(resetTok)+'&reset_expires=gte.'+encodeURIComponent(now)+'&limit=1',{headers:hdr()});
     var rows=await r.json();
     if(!rows||!rows.length){err.textContent='Link inválido ou expirado.';err.style.display='block';btn.disabled=false;btn.textContent='Salvar nova senha';return;}
-    await fetch(SB+'/rest/v1/patients?id=eq.'+rows[0].id,{method:'PATCH',headers:hdr({'Prefer':'return=minimal'}),body:JSON.stringify({access_pass:pass,reset_token:null,reset_expires:null})});
+    var hPass = await hashPass(pass);
+    await fetch(SB+'/rest/v1/patients?id=eq.'+rows[0].id,{method:'PATCH',headers:hdr({'Prefer':'return=minimal'}),body:JSON.stringify({access_pass:hPass,reset_token:null,reset_expires:null})});
     toast('Senha redefinida!','ok');
     setTimeout(function(){showPage('pg-plogin');},1500);
   } catch(e){err.textContent='Erro: '+e.message;err.style.display='block';btn.disabled=false;btn.textContent='Salvar nova senha';}
